@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Assessment · Pedagogy Evaluation Platform</title>
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/questionnaire.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <span class="mark">P</span>
+      <span>Pedagogy<span class="muted"> / Evaluation</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Exit assessment</a>
+    </nav>
+  </div>
+</header>
+
+<div class="q-shell">
+  <div class="q-progress-bar">
+    <div class="container">
+      <div class="q-progress-inner">
+        <span class="q-progress-label" id="q-section-label">Teaching Practice</span>
+        <span class="q-progress-count"><span class="now" id="q-now">01</span><span class="sep">of</span><span id="q-total">20</span></span>
+      </div>
+      <div class="q-bar"><div class="q-bar-fill" id="q-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <main class="q-stage container" id="q-stage">
+    <!-- Question card injected here -->
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/questionnaire.js"></script>
+</body>
+</html>

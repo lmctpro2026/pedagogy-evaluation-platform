@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Your Results · Pedagogy Evaluation Platform</title>
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/results.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <span class="mark">P</span>
+      <span>Pedagogy<span class="muted"> / Evaluation</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="questionnaire.html">Assessment</a>
+      <a href="report.html" class="btn btn-ghost btn-sm">Full report</a>
+    </nav>
+  </div>
+</header>
+
+<main id="results-root">
+
+  <section class="results-hero">
+    <div class="container">
+      <div class="eyebrow">Pedagogy Evaluation · Firmin (2020) Framework</div>
+      <h1>Your <span class="italic-accent">Results.</span></h1>
+      <p>A weighted snapshot of your techno-pedagogical practice across four research-defined categories. Hover any score for detail or open the full written report.</p>
+
+      <div class="overall-strip">
+        <div>
+          <div class="label">Overall Score</div>
+          <div class="big" id="overall-num">—<span class="of">/100</span></div>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <div class="label">Descriptor</div>
+          <div class="descriptor" id="overall-desc">—</div>
+          <div class="session" id="overall-when">—</div>
+        </div>
+        <div style="display:flex; gap:.6rem;">
+          <a class="btn btn-primary" href="report.html">View Full Report →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scores-section">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:0;">
+        <h2 class="h-1">Category breakdown.</h2>
+        <p class="muted">Weighted percentages calculated from your 20 responses.</p>
+      </div>
+      <div class="scores-grid" id="scores-grid">
+        <!-- score cards injected -->
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-section">
+    <div class="container">
+      <div class="chart-grid">
+        <div class="chart-wrap">
+          <canvas id="scores-chart"></canvas>
+          <div class="chart-center">
+            <div>
+              <div class="lbl">Composite</div>
+              <div class="val" id="chart-overall">—</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:1rem;">At a glance</div>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container actions-row">
+    <a class="btn btn-primary btn-lg" href="report.html">View Full Report</a>
+    <button class="btn btn-ghost btn-lg" id="a-pdf">Export PDF</button>
+    <button class="btn btn-ghost btn-lg" id="a-retake">Retake assessment</button>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="container legal">
+    <span>© 2026 Federation University Australia · Pedagogy Evaluation Platform</span>
+    <span>Based on Firmin (2020)</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/results.js"></script>
+</body>
+</html>

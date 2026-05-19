@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Full Report · Pedagogy Evaluation Platform</title>
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/report.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <span class="mark">P</span>
+      <span>Pedagogy<span class="muted"> / Evaluation</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="results.html">Scores</a>
+      <a href="questionnaire.html">Assessment</a>
+    </nav>
+  </div>
+</header>
+
+<div class="report-toolbar">
+  <div class="container report-toolbar-inner">
+    <span class="label">Personalised Report · Firmin (2020) Framework</span>
+    <div class="actions">
+      <a class="btn btn-ghost btn-sm" href="results.html">← Scores</a>
+      <button class="btn btn-primary btn-sm" id="a-pdf">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<main id="report-root">
+  <article class="report-page" id="report-page">
+
+    <header class="report-header">
+      <div class="eyebrow">Pedagogy Evaluation Platform</div>
+      <h1>Personalised <span class="italic-accent">Techno-Pedagogical</span> Practice Report</h1>
+      <div class="report-meta">
+        <span><strong>Participant:</strong> <span id="r-name">—</span></span>
+        <span><strong>Completed:</strong> <span id="r-date">—</span></span>
+        <span><strong>Framework:</strong> <span id="r-framework">Firmin (2020)</span></span>
+      </div>
+    </header>
+
+    <!-- 1. Overview -->
+    <section class="report-section">
+      <div class="sec-eyebrow">01 · Overview</div>
+      <h2>Overall picture of your practice</h2>
+      <p id="ov-para">—</p>
+      <div class="overview-strip">
+        <div>
+          <div class="num" id="ov-num">—<span class="of">/100</span></div>
+        </div>
+        <div>
+          <div class="descriptor" id="ov-desc">—</div>
+          <div class="label">Composite Descriptor</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Per-category interpretation -->
+    <section class="report-section">
+      <div class="sec-eyebrow">02 · Category interpretation</div>
+      <h2>Where you sit across the four dimensions</h2>
+      <p>The Firmin (2020) framework identifies four interrelated dimensions of techno-pedagogical practice. Each interpretation below is calibrated to your score band — high (70+), mid (45–69) or low (&lt;45) — and is intended as a starting point for reflective practice rather than a fixed judgement.</p>
+      <div class="interp-grid" id="interp-grid"><!-- injected --></div>
+    </section>
+
+    <!-- 3. Recommendations -->
+    <section class="report-section">
+      <div class="sec-eyebrow">03 · Recommendations</div>
+      <h2>Suggested next steps</h2>
+      <p>The following recommendations are generated from your score profile. Items targeting categories below 70 are surfaced first; the final two apply to every participant.</p>
+      <div class="recs" id="recs"><!-- injected --></div>
+    </section>
+
+    <!-- 4. Reference -->
+    <section class="report-section">
+      <div class="sec-eyebrow">04 · Reference</div>
+      <h2>About the framework</h2>
+      <p>This report operationalises Dr Selena Firmin's doctoral framework for techno-pedagogical practice. The assessment was developed as a capstone project (ITECH3208) at Federation University Australia. Citation provided in APA 7th format below.</p>
+      <div class="reference-card">
+        <strong>APA reference</strong>
+        <span class="apa">Firmin, S. (2020). <em>Unravelling pedagogy: The role of technology in shaping IT academics' perceptions and application of teaching and philosophy</em> [Doctoral dissertation, Monash University]. ProQuest Dissertations &amp; Theses Global.</span>
+      </div>
+    </section>
+
+  </article>
+
+  <div class="container actions-row" style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; padding-block:1rem 4rem;">
+    <a class="btn btn-ghost btn-lg" href="results.html">← Back to scores</a>
+    <button class="btn btn-primary btn-lg" id="a-pdf-2">Download PDF Report</button>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container legal">
+    <span>© 2026 Federation University Australia · Pedagogy Evaluation Platform</span>
+    <span>Based on Firmin (2020) · Monash University</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/report.js"></script>
+</body>
+</html>

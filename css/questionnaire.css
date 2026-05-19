@@ -1,0 +1,228 @@
+/* ====================================================================
+   Questionnaire page
+   ==================================================================== */
+
+.q-shell {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  flex-direction: column;
+}
+
+.q-progress-bar {
+  position: sticky;
+  top: 70px;
+  z-index: 40;
+  background: rgba(13,11,8,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0 1.1rem;
+}
+.q-progress-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  margin-bottom: .6rem;
+}
+.q-progress-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.q-progress-count {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.q-progress-count .now { color: var(--copper-light); }
+.q-progress-count .sep { color: var(--muted); margin: 0 .3rem; }
+
+.q-bar {
+  height: 4px;
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.q-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--copper-dark), var(--copper-light));
+  border-radius: 999px;
+  transition: width .55s cubic-bezier(.2,.7,.2,1);
+  box-shadow: 0 0 12px rgba(193,127,58,0.5);
+}
+
+/* ---------- Question stage ---------- */
+.q-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+  position: relative;
+  overflow-x: clip;
+}
+
+.q-card {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.75rem, 4vw, 3.25rem);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,0.7);
+  transition: transform .4s var(--ease), opacity .4s var(--ease);
+}
+.q-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(600px 200px at 100% 0%, rgba(193,127,58,0.08), transparent 60%);
+}
+.q-card.exit-left   { opacity: 0; transform: translateX(-40px); }
+.q-card.exit-right  { opacity: 0; transform: translateX(40px); }
+.q-card.enter-left  { opacity: 0; transform: translateX(40px); }
+.q-card.enter-right { opacity: 0; transform: translateX(-40px); }
+
+.q-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: 2rem;
+}
+.q-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  letter-spacing: .18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.q-text {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  font-size: clamp(1.4rem, 3vw, 2.15rem);
+  line-height: 1.25;
+  color: var(--cream);
+  margin-bottom: 2.5rem;
+}
+
+/* ---------- Likert ---------- */
+.likert {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .75rem;
+}
+.likert-option {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem 1rem 1rem;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  transition: transform .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease), box-shadow .25s var(--ease), color .2s var(--ease);
+  color: var(--cream);
+}
+.likert-option:hover {
+  border-color: var(--copper);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -16px rgba(193,127,58,0.6);
+}
+.likert-option .val {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 900;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+  width: 44px; height: 44px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+}
+.likert-option .lbl {
+  font-size: .82rem;
+  color: var(--muted);
+  line-height: 1.3;
+  font-weight: 500;
+}
+.likert-option.selected {
+  background: linear-gradient(160deg, var(--copper) 0%, var(--copper-dark) 100%);
+  border-color: var(--copper-light);
+  color: #1a1108;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 -2px 0 rgba(0,0,0,0.25) inset, 0 18px 36px -16px rgba(193,127,58,0.7);
+}
+.likert-option.selected .val {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.3);
+  color: #1a1108;
+}
+.likert-option.selected .lbl { color: rgba(26,17,8,0.85); font-weight: 600; }
+
+/* ---------- Footer controls ---------- */
+.q-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.25rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+.q-actions .hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--muted);
+}
+.q-actions .hint .kbd { margin-inline: .25rem; }
+
+/* ---------- Welcome / completion overlays ---------- */
+.q-welcome, .q-done {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  text-align: center;
+  padding: clamp(2.5rem, 5vw, 4rem) 1rem;
+}
+.q-welcome h1, .q-done h1 {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  margin-bottom: 1rem;
+}
+.q-welcome p, .q-done p {
+  color: var(--muted);
+  max-width: 50ch;
+  margin-inline: auto;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+}
+
+.q-done .check {
+  width: 84px; height: 84px;
+  margin: 0 auto 1.5rem;
+  border-radius: 999px;
+  background: rgba(74,158,107,0.18);
+  border: 1px solid rgba(74,158,107,0.5);
+  display: grid; place-items: center;
+  color: var(--success);
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 760px) {
+  .likert { grid-template-columns: repeat(5, 1fr); gap: .35rem; }
+  .likert-option { padding: .85rem .4rem .75rem; border-radius: 14px; }
+  .likert-option .val { width: 36px; height: 36px; font-size: 1.2rem; }
+  .likert-option .lbl { display: none; }
+  .likert-option.selected .lbl { display: none; }
+  .q-actions { flex-wrap: wrap; }
+  .q-actions .hint { display: none; }
+}
