@@ -400,6 +400,112 @@
 .cat-row.ta  .code { background: rgba(42,92,68,0.25);   color: #B6DCC4; }
 .cat-row.tpp .code { background: rgba(193,127,58,0.22); color: var(--copper-light); }
 
+/* ---- TEAM SECTION ---- */
+.team-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Featured developer card */
+.team-featured {
+  background: linear-gradient(150deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--copper);
+  border-radius: 16px;
+  padding: 2.25rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.team-featured::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(193,127,58,0.08), transparent 65%);
+  pointer-events: none;
+}
+.tf-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--copper);
+  margin-bottom: .75rem;
+}
+.tf-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+  letter-spacing: -0.04em;
+  color: var(--cream);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+.tf-desc {
+  color: rgba(245,240,232,0.55);
+  font-size: .9rem;
+  line-height: 1.72;
+  max-width: 46ch;
+  margin-bottom: 1.5rem;
+}
+.tf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.tf-tags span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .64rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--copper-light);
+  background: rgba(193,127,58,0.1);
+  border: 1px solid rgba(193,127,58,0.22);
+  padding: .3rem .7rem;
+  border-radius: 4px;
+}
+
+/* Other members list */
+.team-others {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.to-member {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  transition: background .2s var(--ease), padding-left .2s var(--ease);
+}
+.to-member:last-child { border-bottom: none; }
+.to-member:hover { background: rgba(255,255,255,0.025); padding-left: 1.85rem; }
+.to-info { display: flex; flex-direction: column; gap: .18rem; }
+.to-name {
+  font-weight: 700;
+  font-size: .95rem;
+  letter-spacing: -0.01em;
+  color: var(--cream);
+}
+.to-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--muted);
+}
+.to-client {
+  background: rgba(193,127,58,0.04);
+}
+.to-client .to-name { color: var(--copper-light); }
+.to-client .to-role { color: rgba(193,127,58,0.55); }
+
+@media (max-width: 800px) {
+  .team-layout { grid-template-columns: 1fr; }
+}
+
 /* ---- CTA STRIP ---- */
 .cta-strip {
   border: 1px solid var(--border);
