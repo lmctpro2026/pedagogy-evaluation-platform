@@ -30,110 +30,120 @@
 
 <!-- ===================== HERO ===================== -->
 <section class="hero">
-
-  <!-- Metadata bar -->
   <div class="container">
-    <div class="hero-topbar" data-animate>
-      <div class="hero-topbar-l">
-        <span class="live-dot"></span>
-        <span>Firmin (2020) Framework · Research-Informed Self-Assessment</span>
-      </div>
-      <span>Federation University Australia</span>
-    </div>
-  </div>
+    <div class="hero-grid">
 
-  <!-- Mega headline -->
-  <div class="container hero-hl-wrap" data-animate>
-    <h1 class="hero-hl">
-      <span class="hl-line">Evaluate</span>
-      <span class="hl-line hl-copper">Techno-Pedagogical</span>
-      <span class="hl-line hl-stroke">Practice.</span>
-    </h1>
-  </div>
+      <!-- Left: copy + CTA -->
+      <div>
+        <div class="hero-badge" data-animate>
+          <span class="live-dot"></span>
+          Firmin (2020) · Federation University Australia
+        </div>
 
-  <!-- Stats strip -->
-  <div class="container" data-animate>
-    <div class="hero-stats-strip">
-      <div class="hstat">
-        <span class="hstat-num">4</span>
-        <span class="hstat-lbl">Categories</span>
-      </div>
-      <div class="hstat">
-        <span class="hstat-num">20</span>
-        <span class="hstat-lbl">Questions</span>
-      </div>
-      <div class="hstat">
-        <span class="hstat-num">~5</span>
-        <span class="hstat-lbl">Minutes</span>
-      </div>
-      <div class="hstat">
-        <span class="hstat-num">∞</span>
-        <span class="hstat-lbl">Retakes</span>
-      </div>
-    </div>
-  </div>
+        <h1 data-animate>
+          Evaluate your<br>
+          <span class="accent">Techno&#8209;Pedagogical</span><br>
+          Practice.
+        </h1>
 
-  <!-- Description + Category table -->
-  <div class="container" data-animate>
-    <div class="hero-lower">
-
-      <!-- Left: description + CTA -->
-      <div class="hero-desc">
-        <p>
+        <p class="hero-body" data-animate>
           A research-informed self-assessment for educators. Twenty calibrated questions
-          across four categories — reflect, score, and receive a personalised written report
-          grounded in Dr Selena Firmin's doctoral framework.
+          across four dimensions — reflect, score, and receive a personalised written
+          report grounded in Dr Selena Firmin's doctoral framework.
         </p>
-        <div class="hero-cta">
+
+        <div class="hero-cta" data-animate>
           <button class="btn btn-primary btn-lg" data-open-modal="register">
             Begin Assessment
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
           <button class="btn btn-ghost btn-lg" data-open-modal="anonymous">
             Try Anonymously
           </button>
         </div>
+
+        <div class="hero-stats-row" data-animate>
+          <div class="hsr-item">
+            <span class="hsr-num">4</span>
+            <span class="hsr-lbl">Categories</span>
+          </div>
+          <div class="hsr-item">
+            <span class="hsr-num">20</span>
+            <span class="hsr-lbl">Questions</span>
+          </div>
+          <div class="hsr-item">
+            <span class="hsr-num">~5</span>
+            <span class="hsr-lbl">Minutes</span>
+          </div>
+          <div class="hsr-item">
+            <span class="hsr-num">∞</span>
+            <span class="hsr-lbl">Retakes</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Right: category rows -->
-      <div class="hero-cats">
-        <div class="hcat-item tp">
-          <span class="hcat-code">TP</span>
-          <div class="hcat-info">
-            <span class="hcat-name">Teaching Practice</span>
-            <span class="hcat-sub">5 items · Student-centred design</span>
+      <!-- Right: score preview card -->
+      <div data-animate>
+        <div class="score-card">
+          <div class="sc-header">
+            <span class="sc-title">Assessment Profile</span>
+            <span class="sc-badge">Sample</span>
           </div>
-          <span class="hcat-arrow">→</span>
-        </div>
-        <div class="hcat-item pd">
-          <span class="hcat-code">PD</span>
-          <div class="hcat-info">
-            <span class="hcat-name">Pedagogical Development</span>
-            <span class="hcat-sub">5 items · Research engagement</span>
+
+          <div class="sc-categories">
+            <div class="sc-cat tp">
+              <div class="sc-cat-head">
+                <span class="sc-code">TP</span>
+                <span class="sc-cat-name">Teaching Practice</span>
+                <span class="sc-pct">84%</span>
+              </div>
+              <div class="sc-bar-track">
+                <div class="sc-bar-fill" style="--w:84%; --d:0.2s"></div>
+              </div>
+            </div>
+            <div class="sc-cat pd">
+              <div class="sc-cat-head">
+                <span class="sc-code">PD</span>
+                <span class="sc-cat-name">Pedagogical Development</span>
+                <span class="sc-pct">68%</span>
+              </div>
+              <div class="sc-bar-track">
+                <div class="sc-bar-fill" style="--w:68%; --d:0.4s"></div>
+              </div>
+            </div>
+            <div class="sc-cat ta">
+              <div class="sc-cat-head">
+                <span class="sc-code">TA</span>
+                <span class="sc-cat-name">Technology Adoption</span>
+                <span class="sc-pct">91%</span>
+              </div>
+              <div class="sc-bar-track">
+                <div class="sc-bar-fill" style="--w:91%; --d:0.6s"></div>
+              </div>
+            </div>
+            <div class="sc-cat tpp">
+              <div class="sc-cat-head">
+                <span class="sc-code">TPP</span>
+                <span class="sc-cat-name">Techno-Pedagogical Practice</span>
+                <span class="sc-pct">76%</span>
+              </div>
+              <div class="sc-bar-track">
+                <div class="sc-bar-fill" style="--w:76%; --d:0.8s"></div>
+              </div>
+            </div>
           </div>
-          <span class="hcat-arrow">→</span>
-        </div>
-        <div class="hcat-item ta">
-          <span class="hcat-code">TA</span>
-          <div class="hcat-info">
-            <span class="hcat-name">Technology Adoption</span>
-            <span class="hcat-sub">5 items · Evaluated digital use</span>
+
+          <div class="sc-overall">
+            <span class="sc-overall-label">Overall Score</span>
+            <span class="sc-overall-score">79.8<span>/ 100</span></span>
           </div>
-          <span class="hcat-arrow">→</span>
-        </div>
-        <div class="hcat-item tpp">
-          <span class="hcat-code">TPP</span>
-          <div class="hcat-info">
-            <span class="hcat-name">Techno-Pedagogical Practice</span>
-            <span class="hcat-sub">5 items · Intentional integration</span>
-          </div>
-          <span class="hcat-arrow">→</span>
+
+          <p class="sc-footer">Firmin (2020) · Monash University · Sample data only</p>
         </div>
       </div>
 
     </div>
   </div>
-
 </section>
 
 <!-- ===================== MARQUEE ===================== -->
@@ -152,80 +162,57 @@
 
 <!-- ===================== HOW IT WORKS ===================== -->
 <section id="how" class="section container">
-
-  <div class="reveal">
-    <div class="section-eyebrow">How it works</div>
-    <h2 class="h-display">
-      Three steps.<br><span class="italic-accent">One clear picture.</span>
-    </h2>
+  <div class="section-head-row reveal">
+    <div>
+      <div class="section-eyebrow">How it works</div>
+      <h2>Three steps.<br><span class="italic-accent">One clear picture.</span></h2>
+    </div>
+    <p>Each response is weighted, scored, and contextualised against the Firmin (2020) techno-pedagogical practice framework.</p>
   </div>
 
-  <div class="howto-list">
-
-    <div class="howto-step reveal">
-      <span class="howto-num">01</span>
-      <div class="howto-rule-line"></div>
-      <div class="howto-content">
-        <div>
-          <h3>Complete</h3>
-          <p>Answer 20 calibrated statements across four research-defined categories on a five-point Likert scale. No time pressure — the assessment auto-saves as you go.</p>
-        </div>
+  <div class="howto-grid">
+    <div class="howto-card reveal">
+      <div class="howto-card-top">
+        <span class="howto-num">01</span>
         <span class="howto-tag">~5 minutes</span>
       </div>
+      <h3>Complete</h3>
+      <p>Answer 20 calibrated statements across four research-defined categories on a five-point Likert scale. No time pressure — auto-saves as you go.</p>
     </div>
-
-    <div class="howto-step reveal">
-      <span class="howto-num">02</span>
-      <div class="howto-rule-line"></div>
-      <div class="howto-content">
-        <div>
-          <h3>Score</h3>
-          <p>The platform calculates weighted percentages per category and visualises your techno-pedagogical profile instantly — no waiting, no manual calculation.</p>
-        </div>
+    <div class="howto-card reveal">
+      <div class="howto-card-top">
+        <span class="howto-num">02</span>
         <span class="howto-tag">Live results</span>
       </div>
+      <h3>Score</h3>
+      <p>The platform calculates weighted percentages per category and visualises your techno-pedagogical profile instantly.</p>
     </div>
-
-    <div class="howto-step reveal">
-      <span class="howto-num">03</span>
-      <div class="howto-rule-line"></div>
-      <div class="howto-content">
-        <div>
-          <h3>Report</h3>
-          <p>Receive a full written report with category-level interpretations, targeted recommendations, and an exportable PDF — all grounded in the Firmin (2020) framework.</p>
-        </div>
+    <div class="howto-card reveal">
+      <div class="howto-card-top">
+        <span class="howto-num">03</span>
         <span class="howto-tag">PDF · APA cited</span>
       </div>
+      <h3>Report</h3>
+      <p>Receive a full written report with interpretations, targeted recommendations, and an exportable PDF grounded in Firmin (2020).</p>
     </div>
-
   </div>
 </section>
 
 <!-- ===================== FRAMEWORK ===================== -->
 <section id="framework" class="section container">
+  <div class="section-eyebrow reveal" style="margin-bottom:2rem;">The Framework</div>
 
-  <!-- Full-width pull quote -->
-  <div class="framework-quote-wrap reveal">
-    <blockquote class="framework-pullquote">
-      "Effective teaching with technology is not the substitution of practice, but the
-      intentional alignment of pedagogy and tools toward defined learning outcomes."
-      <cite class="framework-cite">— Firmin (2020), Monash University · ProQuest D&amp;T Global</cite>
-    </blockquote>
-    <p class="framework-context">
-      Dr Selena Firmin's doctoral research examined how IT academics perceive and apply teaching
-      philosophy, identifying four interrelated dimensions of techno-pedagogical practice.
-      This platform operationalises that framework into a practical, repeatable self-assessment.
-    </p>
-  </div>
-
-  <!-- 2-col: left description, right category list -->
   <div class="framework-grid">
     <div class="reveal">
-      <div class="section-eyebrow" style="margin-bottom:1rem;">The Four Dimensions</div>
-      <p style="color:rgba(245,240,232,0.55); font-size:.98rem; line-height:1.75; max-width:44ch;">
-        Each dimension captures a distinct aspect of how educators integrate technology into
-        their pedagogical repertoire. Your score across all four dimensions produces a holistic
-        profile of your techno-pedagogical practice.
+      <blockquote class="framework-quote">
+        "Effective teaching with technology is not the substitution of practice, but the
+        intentional alignment of pedagogy and tools toward defined learning outcomes."
+        <cite class="framework-cite">— Firmin (2020), Monash University</cite>
+      </blockquote>
+      <p class="framework-body">
+        Dr Selena Firmin's doctoral research examined how IT academics perceive and apply teaching
+        philosophy, identifying four interrelated dimensions of techno-pedagogical practice.
+        This platform operationalises that framework into a practical, repeatable self-assessment.
       </p>
     </div>
 
@@ -264,29 +251,28 @@
       </div>
     </div>
   </div>
-
 </section>
 
 <!-- ===================== TEAM / CTA ===================== -->
 <section id="team" class="section container">
   <div class="cta-strip reveal">
     <div>
-      <div class="section-eyebrow" style="margin-bottom: 1rem;">ITECH3208 · Capstone Team</div>
+      <div class="section-eyebrow" style="margin-bottom:.85rem;">ITECH3208 · Capstone Team</div>
       <h2>
         Built at <span class="italic-accent">Federation&nbsp;University&nbsp;Australia</span>
         for educators everywhere.
       </h2>
-      <p class="muted" style="margin-top: 1rem; max-width: 50ch;">
+      <p class="muted" style="margin-top:.9rem; max-width:50ch; font-size:.93rem; line-height:1.65;">
         Shafiullah Anik · Kenny George Joseph · Mushfiqur Rahman · Albin Roy.
         Client: Dr Selena (Sally) Firmin.
       </p>
     </div>
     <div style="position:relative;z-index:2;">
-      <button class="btn btn-primary btn-lg" data-open-modal="register" style="width: 100%;">
+      <button class="btn btn-primary btn-lg" data-open-modal="register" style="width:100%;">
         Start your assessment
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <button class="btn btn-ghost btn-lg" data-open-modal="anonymous" style="width: 100%; margin-top: .65rem;">
+      <button class="btn btn-ghost btn-lg" data-open-modal="anonymous" style="width:100%; margin-top:.6rem;">
         Continue anonymously
       </button>
     </div>
@@ -297,7 +283,7 @@
 <footer class="footer">
   <div class="container footer-inner">
     <div>
-      <div class="brand" style="margin-bottom: 1rem;">
+      <div class="brand" style="margin-bottom:.9rem;">
         <span class="mark">P</span>
         <span>Pedagogy Evaluation Platform</span>
       </div>
@@ -390,7 +376,7 @@
     <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>
       <div class="anon-card">
         <h4>One click, no account</h4>
-        <p>You can complete the entire assessment, view your results, and export a PDF report without registering. Your responses are kept on this device only.</p>
+        <p>Complete the entire assessment, view results, and export a PDF without registering. Responses are kept on this device only.</p>
       </div>
       <label class="consent">
         <input id="a-consent" type="checkbox" />
@@ -417,16 +403,15 @@
 <script>
   if (window.gsap) {
     gsap.from('[data-animate]', {
-      opacity: 0, y: 28, duration: 0.75,
+      opacity: 0, y: 24, duration: 0.7,
       stagger: 0.09, ease: 'power3.out'
     });
-
     if (window.ScrollTrigger) {
       gsap.registerPlugin(ScrollTrigger);
       gsap.utils.toArray('.reveal').forEach(el => {
         gsap.from(el, {
           scrollTrigger: { trigger: el, start: 'top 88%' },
-          opacity: 0, y: 36, duration: 0.75, ease: 'power3.out'
+          opacity: 0, y: 28, duration: 0.65, ease: 'power3.out'
         });
       });
     }
