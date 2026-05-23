@@ -118,42 +118,29 @@
   }
 
   async function finish() {
-    // Build payload
-    const payload = {
-      responses: QUESTIONS.map(q => ({ question_id: q.id, answer_value: responses[q.id] })),
-      completed_at: new Date().toISOString(),
-    };
+    const completedAt = new Date().toISOString();
+
+    // Build enriched response list (includes category for the responses table)
+    const responseList = QUESTIONS.map(q => ({
+      question_id:  q.id,
+      category:     q.category,
+      answer_value: responses[q.id],
+    }));
 
     // Calculate scores via shared engine
-    const scores = window.PED.scoring.calculateScores(payload.responses, QUESTIONS);
-    payload.scores = scores;
+    const scores = window.PED.scoring.calculateScores(responseList, QUESTIONS);
     try { localStorage.setItem('ped.scores', JSON.stringify(scores)); } catch {}
-    try { localStorage.setItem('ped.completed', payload.completed_at); } catch {}
+    try { localStorage.setItem('ped.completed', completedAt); } catch {}
 
-    // Best-effort persistence to Supabase
-    const sb = window.PED.supabase;
-    if (sb) {
-      try {
-        const session = JSON.parse(localStorage.getItem(STORAGE_SESS) || 'null');
-        const { data: sessRow, error: sessErr } = await sb.from('sessions').insert([{
-          completed_at: payload.completed_at,
-          score_tp:  scores.TP,
-          score_pd:  scores.PD,
-          score_ta:  scores.TA,
-          score_tpp: scores.TPP,
-        }]).select().single();
-        if (!sessErr && sessRow) {
-          await sb.from('responses').insert(payload.responses.map(r => ({
-            session_id: sessRow.id, question_id: r.question_id, answer_value: r.answer_value,
-          })));
-        }
-      } catch (e) {
-        console.warn('[questionnaire] Supabase persist failed (offline-safe):', e);
-      }
+    // Show completion screen immediately — don't wait on network
+    showDone();
+
+    // Persist to Supabase + trigger email (non-blocking)
+    const sessionId = sessionStorage.getItem('ped.sessionId') || null;
+    if (window.PED.assessment) {
+      window.PED.assessment.completeSession(sessionId, responseList, scores).catch(() => {});
     }
 
-    // Show completion screen briefly, then navigate
-    showDone();
     setTimeout(() => { window.location.href = 'results.html'; }, 900);
   }
 
@@ -193,7 +180,8 @@
     `;
 
     $('#q-begin').addEventListener('click', () => {
-      // Jump to first unanswered (or last seen)
+      // Create a session row in Supabase (non-blocking) so responses can reference it
+      if (window.PED.assessment) window.PED.assessment.createSession().catch(() => {});
       const firstUnanswered = QUESTIONS.findIndex(q => !responses[q.id]);
       index = firstUnanswered === -1 ? 0 : firstUnanswered;
       stage.innerHTML = '';

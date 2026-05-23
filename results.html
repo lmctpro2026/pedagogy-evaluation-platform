@@ -79,11 +79,94 @@
     </div>
   </section>
 
+  <!-- Anonymous email capture — shown only when no email was collected at sign-in -->
+  <section class="email-capture-section" id="email-capture" style="display:none;">
+    <div class="container">
+      <div class="email-capture-card">
+        <div class="eyebrow" style="margin-bottom:.75rem;">Optional</div>
+        <h3>Receive your results by email</h3>
+        <p>Enter your email address and we'll send a copy of your results. Your data supports Dr Firmin's research at Federation University Australia — all responses are confidential.</p>
+        <form class="email-capture-form" id="email-capture-form" novalidate>
+          <input type="email" id="ec-email" placeholder="your@email.com" autocomplete="email" />
+          <button type="submit" class="btn btn-primary" id="ec-submit">Send results</button>
+        </form>
+        <p class="ec-msg" id="ec-msg"></p>
+        <button class="btn-link" id="ec-skip">No thanks, continue without email</button>
+      </div>
+    </div>
+  </section>
+
   <div class="container actions-row">
     <a class="btn btn-primary btn-lg" href="report.html">View Full Report</a>
     <button class="btn btn-ghost btn-lg" id="a-pdf">Export PDF</button>
     <button class="btn btn-ghost btn-lg" id="a-retake">Retake assessment</button>
   </div>
+
+  <script>
+    // Show email capture only for anonymous/no-email users
+    (function () {
+      const email = sessionStorage.getItem('ped.userEmail') || '';
+      if (!email || !email.includes('@')) {
+        const sec = document.getElementById('email-capture');
+        if (sec) sec.style.display = '';
+      }
+
+      const form = document.getElementById('email-capture-form');
+      const msg  = document.getElementById('ec-msg');
+      const skip = document.getElementById('ec-skip');
+
+      if (skip) skip.addEventListener('click', () => {
+        const sec = document.getElementById('email-capture');
+        if (sec) sec.style.display = 'none';
+      });
+
+      if (form) form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const emailVal = document.getElementById('ec-email').value.trim();
+        if (!emailVal || !emailVal.includes('@')) {
+          msg.textContent = 'Please enter a valid email address.';
+          msg.style.color = '#e05a5a';
+          return;
+        }
+
+        const btn = document.getElementById('ec-submit');
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        try {
+          sessionStorage.setItem('ped.userEmail', emailVal);
+          const stored = JSON.parse(localStorage.getItem('ped.session') || 'null');
+          if (stored) {
+            stored.email = emailVal;
+            localStorage.setItem('ped.session', JSON.stringify(stored));
+          }
+
+          // Update Supabase user record if authenticated
+          const sb = window.PED?.supabase;
+          if (sb) {
+            const sessionId = sessionStorage.getItem('ped.sessionId');
+            if (sessionId) {
+              await sb.from('sessions').update({ participant_email: emailVal }).eq('id', sessionId);
+            }
+            // Re-trigger email with address now known
+            const scores = JSON.parse(localStorage.getItem('ped.scores') || 'null');
+            if (scores && window.PED?.assessment) {
+              window.PED.assessment.sendEmailNotifications(sessionId, scores).catch(() => {});
+            }
+          }
+
+          msg.textContent = 'Results sent! Check your inbox.';
+          msg.style.color = '#5aaa7a';
+          btn.textContent = 'Sent ✓';
+        } catch (err) {
+          msg.textContent = 'Could not send — please try again.';
+          msg.style.color = '#e05a5a';
+          btn.disabled = false;
+          btn.textContent = 'Send results';
+        }
+      });
+    })();
+  </script>
 
 </main>
 
@@ -100,6 +183,7 @@
 <script src="js/questions.js"></script>
 <script src="js/scoring.js"></script>
 <script src="js/cursor.js"></script>
+<script src="js/assessment.js"></script>
 <script src="js/results.js"></script>
 </body>
 </html>
