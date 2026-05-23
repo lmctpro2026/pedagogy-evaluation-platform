@@ -20,84 +20,120 @@
       <span>Pedagogy<span class="muted"> / Evaluation</span></span>
     </a>
     <nav class="nav-links">
+      <a href="#framework">Firmin (2020)</a>
       <a href="#how">How it works</a>
-      <a href="#framework">Framework</a>
-      <a href="#team">Team</a>
-      <a href="#" class="btn btn-ghost btn-sm" data-open-modal="signin">Sign in</a>
+      <a href="#team">Our Team</a>
+      <button class="btn-signin" data-open-modal="register">Begin <span aria-hidden="true">→</span></button>
     </nav>
   </div>
 </header>
 
 <!-- ===================== HERO ===================== -->
-<section class="hero container">
-  <div class="hero-glow"></div>
+<section class="hero">
 
-  <div class="hero-grid">
-    <div>
-      <div class="hero-eyebrow" data-animate>
-        <span class="dot"></span>
-        Firmin (2020) Framework · Federation University
+  <!-- Metadata bar -->
+  <div class="container">
+    <div class="hero-topbar" data-animate>
+      <div class="hero-topbar-l">
+        <span class="live-dot"></span>
+        <span>Firmin (2020) Framework · Research-Informed Self-Assessment</span>
       </div>
-
-      <h1 data-animate>
-        Evaluate your <span class="italic-accent">Techno&#8209;Pedagogical</span> Practice.
-      </h1>
-
-      <p class="hero-sub" data-animate>
-        A research-informed self-assessment for educators. Twenty calibrated questions across four
-        categories — reflect, score, and receive a personalised written report grounded in Dr Selena Firmin's
-        doctoral framework.
-      </p>
-
-      <div class="hero-cta" data-animate>
-        <button class="btn btn-primary btn-lg" data-open-modal="register">
-          Begin Assessment
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-        <button class="btn btn-ghost btn-lg" data-open-modal="anonymous">
-          Try Anonymously
-        </button>
-      </div>
-
-      <div class="hero-stats" data-animate>
-        <div class="stat"><span class="num">4</span><span class="lbl">Categories</span></div>
-        <div class="stat"><span class="num">20</span><span class="lbl">Questions</span></div>
-        <div class="stat"><span class="num">~5</span><span class="lbl">Minutes</span></div>
-        <div class="stat"><span class="num">∞</span><span class="lbl">Retakes</span></div>
-      </div>
+      <span>Federation University Australia</span>
     </div>
+  </div>
 
-    <div class="float-pills" data-animate>
-      <div class="float-pill fp1">
-        <span class="code">TP</span>
-        <span class="meta">
-          <span class="name">Teaching Practice</span>
-          <span class="sub">5 items</span>
-        </span>
+  <!-- Mega headline -->
+  <div class="container hero-hl-wrap" data-animate>
+    <h1 class="hero-hl">
+      <span class="hl-line">Evaluate</span>
+      <span class="hl-line hl-copper">Techno-Pedagogical</span>
+      <span class="hl-line hl-stroke">Practice.</span>
+    </h1>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="container" data-animate>
+    <div class="hero-stats-strip">
+      <div class="hstat">
+        <span class="hstat-num">4</span>
+        <span class="hstat-lbl">Categories</span>
       </div>
-      <div class="float-pill fp2">
-        <span class="code">PD</span>
-        <span class="meta">
-          <span class="name">Pedagogical Development</span>
-          <span class="sub">5 items</span>
-        </span>
+      <div class="hstat">
+        <span class="hstat-num">20</span>
+        <span class="hstat-lbl">Questions</span>
       </div>
-      <div class="float-pill fp3">
-        <span class="code">TA</span>
-        <span class="meta">
-          <span class="name">Technology Adoption</span>
-          <span class="sub">5 items</span>
-        </span>
+      <div class="hstat">
+        <span class="hstat-num">~5</span>
+        <span class="hstat-lbl">Minutes</span>
       </div>
-      <div class="float-pill fp4">
-        <span class="code">TPP</span>
-        <span class="meta">
-          <span class="name">Techno-Pedagogical Practice</span>
-          <span class="sub">5 items</span>
-        </span>
+      <div class="hstat">
+        <span class="hstat-num">∞</span>
+        <span class="hstat-lbl">Retakes</span>
       </div>
     </div>
   </div>
+
+  <!-- Description + Category table -->
+  <div class="container" data-animate>
+    <div class="hero-lower">
+
+      <!-- Left: description + CTA -->
+      <div class="hero-desc">
+        <p>
+          A research-informed self-assessment for educators. Twenty calibrated questions
+          across four categories — reflect, score, and receive a personalised written report
+          grounded in Dr Selena Firmin's doctoral framework.
+        </p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" data-open-modal="register">
+            Begin Assessment
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-lg" data-open-modal="anonymous">
+            Try Anonymously
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: category rows -->
+      <div class="hero-cats">
+        <div class="hcat-item tp">
+          <span class="hcat-code">TP</span>
+          <div class="hcat-info">
+            <span class="hcat-name">Teaching Practice</span>
+            <span class="hcat-sub">5 items · Student-centred design</span>
+          </div>
+          <span class="hcat-arrow">→</span>
+        </div>
+        <div class="hcat-item pd">
+          <span class="hcat-code">PD</span>
+          <div class="hcat-info">
+            <span class="hcat-name">Pedagogical Development</span>
+            <span class="hcat-sub">5 items · Research engagement</span>
+          </div>
+          <span class="hcat-arrow">→</span>
+        </div>
+        <div class="hcat-item ta">
+          <span class="hcat-code">TA</span>
+          <div class="hcat-info">
+            <span class="hcat-name">Technology Adoption</span>
+            <span class="hcat-sub">5 items · Evaluated digital use</span>
+          </div>
+          <span class="hcat-arrow">→</span>
+        </div>
+        <div class="hcat-item tpp">
+          <span class="hcat-code">TPP</span>
+          <div class="hcat-info">
+            <span class="hcat-name">Techno-Pedagogical Practice</span>
+            <span class="hcat-sub">5 items · Intentional integration</span>
+          </div>
+          <span class="hcat-arrow">→</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </section>
 
 <!-- ===================== MARQUEE ===================== -->
@@ -116,55 +152,80 @@
 
 <!-- ===================== HOW IT WORKS ===================== -->
 <section id="how" class="section container">
-  <div class="section-head reveal">
-    <h2 class="h-display" style="font-size: clamp(2.4rem, 5.5vw, 5rem);">
-      Three steps. <span class="italic-accent">One clear picture.</span>
+
+  <div class="reveal">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="h-display">
+      Three steps.<br><span class="italic-accent">One clear picture.</span>
     </h2>
-    <p>Each response is weighted, scored, and contextualised against the Firmin (2020) techno-pedagogical practice framework.</p>
   </div>
 
-  <div class="howto-grid">
-    <article class="howto-card reveal tilt">
-      <span class="step-num">01</span>
-      <div>
-        <h3>Complete</h3>
-        <p>Answer 20 calibrated statements across four research-defined categories on a five-point Likert scale.</p>
+  <div class="howto-list">
+
+    <div class="howto-step reveal">
+      <span class="howto-num">01</span>
+      <div class="howto-rule-line"></div>
+      <div class="howto-content">
+        <div>
+          <h3>Complete</h3>
+          <p>Answer 20 calibrated statements across four research-defined categories on a five-point Likert scale. No time pressure — the assessment auto-saves as you go.</p>
+        </div>
+        <span class="howto-tag">~5 minutes</span>
       </div>
-      <span class="eyebrow">~5 minutes</span>
-    </article>
-    <article class="howto-card reveal tilt">
-      <span class="step-num">02</span>
-      <div>
-        <h3>Score</h3>
-        <p>The platform calculates weighted percentages per category and visualises your profile instantly.</p>
+    </div>
+
+    <div class="howto-step reveal">
+      <span class="howto-num">02</span>
+      <div class="howto-rule-line"></div>
+      <div class="howto-content">
+        <div>
+          <h3>Score</h3>
+          <p>The platform calculates weighted percentages per category and visualises your techno-pedagogical profile instantly — no waiting, no manual calculation.</p>
+        </div>
+        <span class="howto-tag">Live results</span>
       </div>
-      <span class="eyebrow">Live results</span>
-    </article>
-    <article class="howto-card reveal tilt">
-      <span class="step-num">03</span>
-      <div>
-        <h3>Report</h3>
-        <p>Receive a full written report with interpretations, recommendations and an exportable PDF.</p>
+    </div>
+
+    <div class="howto-step reveal">
+      <span class="howto-num">03</span>
+      <div class="howto-rule-line"></div>
+      <div class="howto-content">
+        <div>
+          <h3>Report</h3>
+          <p>Receive a full written report with category-level interpretations, targeted recommendations, and an exportable PDF — all grounded in the Firmin (2020) framework.</p>
+        </div>
+        <span class="howto-tag">PDF · APA cited</span>
       </div>
-      <span class="eyebrow">PDF · APA cited</span>
-    </article>
+    </div>
+
   </div>
 </section>
 
 <!-- ===================== FRAMEWORK ===================== -->
 <section id="framework" class="section container">
-  <div class="framework">
+
+  <!-- Full-width pull quote -->
+  <div class="framework-quote-wrap reveal">
+    <blockquote class="framework-pullquote">
+      "Effective teaching with technology is not the substitution of practice, but the
+      intentional alignment of pedagogy and tools toward defined learning outcomes."
+      <cite class="framework-cite">— Firmin (2020), Monash University · ProQuest D&amp;T Global</cite>
+    </blockquote>
+    <p class="framework-context">
+      Dr Selena Firmin's doctoral research examined how IT academics perceive and apply teaching
+      philosophy, identifying four interrelated dimensions of techno-pedagogical practice.
+      This platform operationalises that framework into a practical, repeatable self-assessment.
+    </p>
+  </div>
+
+  <!-- 2-col: left description, right category list -->
+  <div class="framework-grid">
     <div class="reveal">
-      <div class="eyebrow" style="margin-bottom: 1.25rem;">The Framework</div>
-      <blockquote class="quote">
-        “Effective teaching with technology is not the substitution of practice, but the
-        intentional alignment of pedagogy and tools toward defined learning outcomes.”
-        <span class="quote-cite">— Firmin (2020), Monash University</span>
-      </blockquote>
-      <p class="muted" style="margin-top: 1.5rem; max-width: 52ch;">
-        Dr Selena Firmin's doctoral research examined how IT academics perceive and apply teaching philosophy,
-        identifying four interrelated dimensions of techno-pedagogical practice. This platform operationalises
-        that framework into a practical, repeatable self-assessment.
+      <div class="section-eyebrow" style="margin-bottom:1rem;">The Four Dimensions</div>
+      <p style="color:rgba(245,240,232,0.55); font-size:.98rem; line-height:1.75; max-width:44ch;">
+        Each dimension captures a distinct aspect of how educators integrate technology into
+        their pedagogical repertoire. Your score across all four dimensions produces a holistic
+        profile of your techno-pedagogical practice.
       </p>
     </div>
 
@@ -203,24 +264,27 @@
       </div>
     </div>
   </div>
+
 </section>
 
 <!-- ===================== TEAM / CTA ===================== -->
 <section id="team" class="section container">
   <div class="cta-strip reveal">
     <div>
-      <div class="eyebrow" style="margin-bottom: 1rem;">ITECH3208 · Capstone Team</div>
+      <div class="section-eyebrow" style="margin-bottom: 1rem;">ITECH3208 · Capstone Team</div>
       <h2>
-        Built at <span class="italic-accent">Federation&nbsp;University&nbsp;Australia</span> for educators everywhere.
+        Built at <span class="italic-accent">Federation&nbsp;University&nbsp;Australia</span>
+        for educators everywhere.
       </h2>
-      <p class="muted" style="margin-top: 1rem; max-width: 56ch;">
+      <p class="muted" style="margin-top: 1rem; max-width: 50ch;">
         Shafiullah Anik · Kenny George Joseph · Mushfiqur Rahman · Albin Roy.
         Client: Dr Selena (Sally) Firmin.
       </p>
     </div>
-    <div>
+    <div style="position:relative;z-index:2;">
       <button class="btn btn-primary btn-lg" data-open-modal="register" style="width: 100%;">
         Start your assessment
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
       <button class="btn btn-ghost btn-lg" data-open-modal="anonymous" style="width: 100%; margin-top: .65rem;">
         Continue anonymously
@@ -264,7 +328,7 @@
 
 <!-- ===================== AUTH MODAL ===================== -->
 <div class="modal-backdrop" id="auth-modal" data-close-modal>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button class="modal-close" data-close-modal aria-label="Close">×</button>
 
     <div class="modal-eyebrow">Access</div>
@@ -351,34 +415,22 @@
 <script src="js/auth.js"></script>
 
 <script>
-  // ---- Page enter & scroll animations ----
   if (window.gsap) {
     gsap.from('[data-animate]', {
-      opacity: 0, y: 32, duration: 0.7,
-      stagger: 0.08, ease: 'power3.out'
+      opacity: 0, y: 28, duration: 0.75,
+      stagger: 0.09, ease: 'power3.out'
     });
 
     if (window.ScrollTrigger) {
       gsap.registerPlugin(ScrollTrigger);
       gsap.utils.toArray('.reveal').forEach(el => {
         gsap.from(el, {
-          scrollTrigger: { trigger: el, start: 'top 85%' },
-          opacity: 0, y: 40, duration: 0.7, ease: 'power3.out'
+          scrollTrigger: { trigger: el, start: 'top 88%' },
+          opacity: 0, y: 36, duration: 0.75, ease: 'power3.out'
         });
       });
     }
   }
-
-  // ---- 3D tilt for howto cards ----
-  document.querySelectorAll('.tilt').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      const rect = card.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width  - 0.5;
-      const y = (e.clientY - rect.top)  / rect.height - 0.5;
-      card.style.transform = `perspective(700px) rotateY(${x*8}deg) rotateX(${-y*6}deg) translateY(-4px)`;
-    });
-    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
-  });
 </script>
 </body>
 </html>
