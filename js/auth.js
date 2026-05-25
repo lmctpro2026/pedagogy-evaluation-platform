@@ -6,11 +6,35 @@
   const $  = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
 
-  // Pending OTP state — set when registration needs email verification
+  // Pending OTP state — set when registration needs email verification.
+  // Persisted to sessionStorage so an accidental refresh doesn't strand the
+  // user halfway through verification.
   let pendingEmail = '';
   let pendingName  = '';
 
+  const PENDING_KEY = 'ped.pendingVerify';
+  function savePending() {
+    try {
+      if (pendingEmail) sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email: pendingEmail, name: pendingName, ts: Date.now() }));
+      else              sessionStorage.removeItem(PENDING_KEY);
+    } catch {}
+  }
+  function loadPending() {
+    try {
+      const raw = sessionStorage.getItem(PENDING_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      // Expire after 60 minutes — same as Supabase OTP expiry
+      if (!obj?.email || (Date.now() - (obj.ts || 0)) > 60 * 60 * 1000) {
+        sessionStorage.removeItem(PENDING_KEY);
+        return null;
+      }
+      return obj;
+    } catch { return null; }
+  }
+
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const normEmail = v => (v || '').trim().toLowerCase();
 
   // -----------------------------------------------------------------------
   // Toast
@@ -63,9 +87,10 @@
     if (sBars) { sBars.className = 'strength'; }
     const sLbl = $('#r-strength-label');
     if (sLbl) sLbl.textContent = '';
-    // Reset OTP state
+    // Reset OTP state (in-memory AND persisted)
     pendingEmail = '';
     pendingName  = '';
+    savePending();
     switchTab('signin');
     syncSubmitButtons();
   }
@@ -247,41 +272,63 @@
       otpSubmit.addEventListener('click', async () => {
         const code = (otpInput?.value || '').trim();
         if (code.length !== 6) return;
+        if (!pendingEmail) {
+          if (otpErr) otpErr.textContent = 'Lost track of your email — please register again.';
+          console.error('[auth] OTP submit but pendingEmail is empty');
+          return;
+        }
         const sb = window.PED.supabase;
         const origText = otpSubmit.innerHTML;
         otpSubmit.disabled = true;
         otpSubmit.innerHTML = 'Verifying…';
         try {
           if (sb) {
+            console.log('[auth] verifyOtp →', { email: pendingEmail, token: code, type: 'signup' });
             const { data, error } = await sb.auth.verifyOtp({
-              email: pendingEmail,
+              email: normEmail(pendingEmail),
               token: code,
               type:  'signup',
             });
+            console.log('[auth] verifyOtp ←', { error, user: data?.user, hasSession: !!data?.session });
+
             if (error) {
               const msg = (error.message || '').toLowerCase();
-              if (otpErr) otpErr.textContent = msg.includes('expired')
-                ? 'Code expired — please resend.' : msg.includes('invalid') || msg.includes('otp')
-                ? 'Incorrect code. Please try again.' : (error.message || 'Verification failed.');
+              let display;
+              if (msg.includes('expired')) display = 'Code expired — click "Resend" below.';
+              else if (msg.includes('invalid') || msg.includes('otp') || msg.includes('token')) {
+                display = 'Incorrect code. Note: if you clicked Resend, only the newest code works.';
+              } else {
+                display = error.message || 'Verification failed.';
+              }
+              if (otpErr) otpErr.textContent = display;
               otpSubmit.disabled = false;
               otpSubmit.innerHTML = origText;
               return;
             }
+
+            // verifyOtp success should also establish a session. If it didn't,
+            // try to refresh it explicitly so questionnaire.html sees the user.
+            if (!data?.session) {
+              console.warn('[auth] verifyOtp succeeded but no session returned — fetching');
+              await sb.auth.getSession();
+            }
+
             if (data?.user) {
               await upsertUserProfile(data.user.id, {
-                email: pendingEmail, full_name: pendingName,
+                email: normEmail(pendingEmail), full_name: pendingName,
                 is_anonymous: false, consent_given: true,
               });
             }
           }
-          const displayName = pendingName.split(' ')[0];
-          storeUser(displayName, pendingEmail);
-          persistLocal({ mode: 'register', email: pendingEmail, displayName, fullName: pendingName, ts: Date.now() });
+          const displayName = (pendingName || '').split(' ')[0] || 'You';
+          storeUser(displayName, normEmail(pendingEmail));
+          persistLocal({ mode: 'register', email: normEmail(pendingEmail), displayName, fullName: pendingName, ts: Date.now() });
+          pendingEmail = ''; pendingName = ''; savePending();
           closeModal();
           setTimeout(() => { window.location.href = 'questionnaire.html'; }, 400);
         } catch (err) {
-          console.error('[auth] OTP verify error:', err);
-          if (otpErr) otpErr.textContent = 'Verification failed. Please try again.';
+          console.error('[auth] OTP verify exception:', err);
+          if (otpErr) otpErr.textContent = `Verification failed: ${err.message || err}`;
           otpSubmit.disabled = false;
           otpSubmit.innerHTML = origText;
         }
@@ -293,10 +340,28 @@
         const sb = window.PED.supabase;
         if (!sb || !pendingEmail) return;
         try {
-          await sb.auth.resend({ type: 'signup', email: pendingEmail });
-          showToast('New code sent — check your inbox.');
-        } catch { showToast('Could not resend. Please try again.'); }
+          console.log('[auth] resend OTP →', { email: pendingEmail });
+          const { error } = await sb.auth.resend({ type: 'signup', email: normEmail(pendingEmail) });
+          if (error) { console.error('[auth] resend error:', error); showToast(`Could not resend: ${error.message}`); }
+          else      { showToast('New code sent — check your inbox.'); }
+        } catch (err) {
+          console.error('[auth] resend exception:', err);
+          showToast('Could not resend. Please try again.');
+        }
       });
+    }
+
+    // If sessionStorage has a pending verification (e.g., user refreshed mid-flow),
+    // restore it and auto-open the OTP panel so they can finish.
+    const pend = loadPending();
+    if (pend) {
+      pendingEmail = pend.email;
+      pendingName  = pend.name || '';
+      const otpEmailEl = document.getElementById('otp-email-display');
+      if (otpEmailEl) otpEmailEl.textContent = pendingEmail;
+      console.log('[auth] Restored pending verification for', pendingEmail);
+      openModal();
+      switchTab('verify');
     }
 
     syncSubmitButtons();
@@ -372,18 +437,22 @@
     }
   }
 
-  async function doRegister(name, email, password) {
+  async function doRegister(name, rawEmail, password) {
     const sb = window.PED.supabase;
+    const email = normEmail(rawEmail);
     setSubmitting('r-submit', true);
     try {
       if (sb) {
+        console.log('[auth] signUp →', { email });
         const { data, error } = await sb.auth.signUp({
           email, password, options: { data: { full_name: name } }
         });
+        console.log('[auth] signUp ←', { error, user: data?.user, identities: data?.user?.identities, hasSession: !!data?.session });
+
         if (error) {
-          const msg = (error.message||'').toLowerCase();
-          if (msg.includes('already registered') || msg.includes('already exists')) {
-            showFieldError('r-email', 'An account with this email already exists. Try signing in.');
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+            showFieldError('r-email', 'An account with this email already exists. Click "Sign in" above.');
           } else if (msg.includes('email')) {
             showFieldError('r-email', error.message);
           } else if (msg.includes('password')) {
@@ -394,16 +463,34 @@
           setSubmitting('r-submit', false);
           return;
         }
+
         const user = data?.user;
+
+        // Anti-enumeration check: Supabase returns a fake user object with
+        // an empty identities array when the email already exists and is
+        // confirmed. There's no real signup, no email sent — verifyOtp would
+        // never succeed. Tell the user to sign in instead.
+        if (user && Array.isArray(user.identities) && user.identities.length === 0) {
+          console.warn('[auth] signUp returned fake user (email already exists, identities empty)');
+          showFieldError('r-email', 'An account with this email already exists. Click "Sign in" above to use it.');
+          setSubmitting('r-submit', false);
+          return;
+        }
+
+        // Confirmation required — show OTP panel, persist state for refresh recovery
         if (user && !user.email_confirmed_at) {
           pendingEmail = email;
           pendingName  = name;
+          savePending();
           const otpEmailEl = document.getElementById('otp-email-display');
           if (otpEmailEl) otpEmailEl.textContent = email;
           setSubmitting('r-submit', false);
           switchTab('verify');
+          console.log('[auth] Showing OTP panel for', email);
           return;
         }
+
+        // Email already confirmed (autoconfirm enabled) — create profile and proceed
         if (user) {
           await upsertUserProfile(user.id, {
             email, full_name: name, is_anonymous: false, consent_given: true
@@ -417,7 +504,7 @@
       setTimeout(() => { window.location.href = 'questionnaire.html'; }, sb ? 400 : 0);
     } catch (err) {
       console.error('[auth] register error:', err);
-      showFieldError('r-email', 'Registration failed. Please try again.');
+      showFieldError('r-email', `Registration failed: ${err.message || err}`);
       setSubmitting('r-submit', false);
     }
   }
