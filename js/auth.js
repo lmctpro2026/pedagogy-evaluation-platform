@@ -394,13 +394,8 @@
           setSubmitting('r-submit', false);
           return;
         }
-        if (data?.user) {
-          await upsertUserProfile(data.user.id, {
-            email, full_name: name, is_anonymous: false, consent_given: true
-          });
-        }
-        if (data?.user && !data?.session) {
-          // Email confirmation required — show OTP panel
+        const user = data?.user;
+        if (user && !user.email_confirmed_at) {
           pendingEmail = email;
           pendingName  = name;
           const otpEmailEl = document.getElementById('otp-email-display');
@@ -408,6 +403,11 @@
           setSubmitting('r-submit', false);
           switchTab('verify');
           return;
+        }
+        if (user) {
+          await upsertUserProfile(user.id, {
+            email, full_name: name, is_anonymous: false, consent_given: true
+          });
         }
       }
       const displayName = name.split(' ')[0];
