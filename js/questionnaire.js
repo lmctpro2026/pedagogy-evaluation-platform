@@ -65,8 +65,12 @@
     `;
     stage.appendChild(node);
 
+    // Double-rAF: first frame paints the initial opacity:0 state,
+    // second frame removes the class so the CSS transition fires correctly.
     requestAnimationFrame(() => {
-      node.classList.remove('enter-left', 'enter-right');
+      requestAnimationFrame(() => {
+        node.classList.remove('enter-left', 'enter-right');
+      });
     });
     setTimeout(() => { if (old && old.parentNode) old.parentNode.removeChild(old); }, 430);
 
