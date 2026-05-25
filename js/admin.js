@@ -12,10 +12,10 @@
   const $ = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
 
-  let allSessions = [];   // master copy for filtering/sorting
-  let sortCol     = 'date';
-  let sortDir     = 'desc';
-  let chartInst   = null;
+  let allRows   = [];   // master copy for filtering/sorting — one row per participant
+  let sortCol   = 'date';
+  let sortDir   = 'desc';
+  let chartInst = null;
 
   // -------------------------------------------------------------------------
   // Boot
@@ -44,6 +44,11 @@
     if (gate) gate.hidden = false;
     const dash = $('#admin-dashboard');
     if (dash) dash.hidden = true;
+    // Hide nav-side admin chrome when on the gate
+    const pill   = $('#admin-user-pill');
+    if (pill)   { pill.textContent = ''; pill.style.display = 'none'; }
+    const logout = $('#admin-logout');
+    if (logout) logout.hidden = true;
     if (msg) {
       const errEl = $('#gate-err');
       if (errEl) errEl.textContent = msg;
@@ -113,8 +118,10 @@
     const pill = $('#admin-user-pill');
     if (pill) { pill.textContent = email; pill.style.display = 'block'; }
 
-    // Logout
-    $('#admin-logout')?.addEventListener('click', async () => {
+    // Logout — reveal and wire
+    const logoutBtn = $('#admin-logout');
+    if (logoutBtn) logoutBtn.hidden = false;
+    logoutBtn?.addEventListener('click', async () => {
       await window.PED.supabase.auth.signOut();
       window.location.href = 'index.html';
     });
@@ -138,27 +145,28 @@
   }
 
   // -------------------------------------------------------------------------
-  // Per-row session delete
+  // Per-row participant delete — wipes the user row (cascades to sessions and
+  // responses via FK). Auth.users is left in place; if needed, use the bigger
+  // "Reset test data" button.
   // -------------------------------------------------------------------------
-  async function deleteSession(sessionId, participantName) {
-    if (!sessionId) return;
-    const label = participantName || 'this session';
-    if (!window.confirm(`Delete the session for "${label}"?\n\nThis removes the session and all its question responses. Cannot be undone.`)) return;
+  async function deleteParticipant(userId, participantName) {
+    if (!userId) return;
+    const label = participantName || 'this participant';
+    if (!window.confirm(`Delete "${label}" and all of their session data?\n\nRemoves their profile row, every session they have, and every question response. Cannot be undone.`)) return;
 
     const sb = window.PED?.supabase;
     if (!sb) return;
     try {
-      const { error } = await sb.from('sessions').delete().eq('id', sessionId);
+      const { error } = await sb.from('users').delete().eq('id', userId);
       if (error) throw error;
-      // Optimistic update — remove from local list and re-render
-      allSessions = allSessions.filter(s => s.id !== sessionId);
+      allRows = allRows.filter(r => r.userId !== userId);
       renderStats();
       renderChart();
       renderTable();
       updateLastUpdated();
     } catch (err) {
       console.error('[admin] delete error:', err);
-      window.alert(`Failed to delete session: ${err.message}`);
+      window.alert(`Failed to delete participant: ${err.message}`);
     }
   }
 
@@ -199,33 +207,60 @@
   }
 
   // -------------------------------------------------------------------------
-  // Load data from Supabase
+  // Load data from Supabase — one row per participant (registered or anonymous),
+  // with their most-recent session (if any) folded in.
   // -------------------------------------------------------------------------
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
 
     try {
-      const { data: sessions, error } = await sb
-        .from('sessions')
-        .select('id, participant_email, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at, users(full_name, is_anonymous)')
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false });
+      const { data: users, error } = await sb
+        .from('users')
+        .select(`
+          id, email, full_name, is_anonymous, created_at,
+          sessions ( id, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at, participant_email )
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      allSessions = (sessions || []).map(s => ({
-        id:        s.id,
-        name:      s.users?.full_name || 'Anonymous',
-        email:     s.participant_email || s.users?.email || '—',
-        anon:      s.users?.is_anonymous ?? true,
-        tp:        +(s.score_tp  ?? 0).toFixed(1),
-        pd:        +(s.score_pd  ?? 0).toFixed(1),
-        ta:        +(s.score_ta  ?? 0).toFixed(1),
-        tpp:       +(s.score_tpp ?? 0).toFixed(1),
-        overall:   +((+s.score_tp + +s.score_pd + +s.score_ta + +s.score_tpp) / 4).toFixed(1),
-        date:      s.completed_at || s.created_at,
-      }));
+      allRows = (users || [])
+        // Hide admin accounts from the participant list — they're not subjects
+        .filter(u => !ADMIN_EMAILS.includes((u.email || '').toLowerCase()))
+        .map(u => {
+          const sessions = (u.sessions || []).slice().sort((a, b) => {
+            const ad = new Date(a.completed_at || a.created_at).getTime();
+            const bd = new Date(b.completed_at || b.created_at).getTime();
+            return bd - ad;   // newest first
+          });
+          // Prefer the most-recent completed session if any; else most recent attempt
+          const completed = sessions.find(s => s.completed_at);
+          const latest    = completed || sessions[0] || null;
+          const status    = !latest ? 'not-started'
+                          : latest.completed_at ? 'completed'
+                          : 'in-progress';
+
+          const overall = (latest && latest.completed_at)
+            ? +(((+latest.score_tp || 0) + (+latest.score_pd || 0) + (+latest.score_ta || 0) + (+latest.score_tpp || 0)) / 4).toFixed(1)
+            : null;
+
+          return {
+            userId:       u.id,
+            sessionId:    latest?.id || null,
+            name:         u.full_name || (u.is_anonymous ? 'Anonymous' : '—'),
+            email:        u.email || latest?.participant_email || '—',
+            anon:         u.is_anonymous ?? false,
+            status,
+            tp:           (latest && latest.completed_at) ? +(+latest.score_tp  ?? 0).toFixed(1) : null,
+            pd:           (latest && latest.completed_at) ? +(+latest.score_pd  ?? 0).toFixed(1) : null,
+            ta:           (latest && latest.completed_at) ? +(+latest.score_ta  ?? 0).toFixed(1) : null,
+            tpp:          (latest && latest.completed_at) ? +(+latest.score_tpp ?? 0).toFixed(1) : null,
+            overall,
+            date:         latest?.completed_at || latest?.created_at || u.created_at,
+            sessionCount: sessions.length,
+          };
+        });
 
       renderStats();
       renderChart();
@@ -241,33 +276,46 @@
   // Stats cards
   // -------------------------------------------------------------------------
   function renderStats() {
-    const total    = allSessions.length;
-    const avgScore = total ? (allSessions.reduce((a, s) => a + s.overall, 0) / total).toFixed(1) : '—';
-    const regPct   = total ? Math.round((allSessions.filter(s => !s.anon).length / total) * 100) : 0;
-    const today    = allSessions.filter(s => {
-      const d = new Date(s.date);
+    const totalUsers     = allRows.length;
+    const completed      = allRows.filter(r => r.status === 'completed');
+    const inProgress     = allRows.filter(r => r.status === 'in-progress').length;
+    const registered     = allRows.filter(r => !r.anon).length;
+    const anonymous      = allRows.filter(r => r.anon).length;
+    const avgScore       = completed.length
+      ? (completed.reduce((a, r) => a + r.overall, 0) / completed.length).toFixed(1)
+      : null;
+    const todayCompleted = completed.filter(r => {
+      const d = new Date(r.date);
       const now = new Date();
       return d.toDateString() === now.toDateString();
     }).length;
 
-    const el = id => document.getElementById(id);
+    const el  = id => document.getElementById(id);
     const set = (id, v) => { const e = el(id); if (e) e.textContent = v; };
-    set('stat-total',    total);
-    set('stat-avg',      total ? `${avgScore}%` : '—');
-    set('stat-reg',      total ? `${regPct}%` : '—');
-    set('stat-today',    today);
-    set('stat-reg-sub',  `${allSessions.filter(s => !s.anon).length} registered · ${allSessions.filter(s => s.anon).length} anonymous`);
+
+    // Total card: "users · completed" — still surfaces completion count
+    set('stat-total',    totalUsers);
+    const totalLabel = el('stat-total')?.parentElement?.querySelector('.stat-label');
+    if (totalLabel) totalLabel.textContent = 'Total Users';
+    const totalSub = el('stat-total')?.parentElement?.querySelector('.stat-sub');
+    if (totalSub)   totalSub.textContent   = `${completed.length} completed · ${inProgress} in progress`;
+
+    set('stat-avg',      avgScore != null ? `${avgScore}%` : '—');
+    set('stat-reg',      totalUsers ? `${Math.round((registered / totalUsers) * 100)}%` : '—');
+    set('stat-today',    todayCompleted);
+    set('stat-reg-sub',  `${registered} registered · ${anonymous} anonymous`);
   }
 
   // -------------------------------------------------------------------------
-  // Category averages chart
+  // Category averages chart — only across COMPLETED sessions
   // -------------------------------------------------------------------------
   function renderChart() {
     const canvas = document.getElementById('admin-chart');
     if (!canvas || !window.Chart) return;
 
-    const total = allSessions.length;
-    const avg = key => total ? +(allSessions.reduce((a, s) => a + s[key], 0) / total).toFixed(1) : 0;
+    const completed = allRows.filter(r => r.status === 'completed');
+    const n = completed.length;
+    const avg = key => n ? +(completed.reduce((a, r) => a + (r[key] || 0), 0) / n).toFixed(1) : 0;
     const data = [avg('tp'), avg('pd'), avg('ta'), avg('tpp')];
 
     if (chartInst) chartInst.destroy();
@@ -301,15 +349,20 @@
   // -------------------------------------------------------------------------
   function renderTable() {
     const query   = ($('#admin-search')?.value || '').toLowerCase();
-    const visible = allSessions.filter(s =>
-      s.name.toLowerCase().includes(query) ||
-      s.email.toLowerCase().includes(query)
+    const visible = allRows.filter(r =>
+      r.name.toLowerCase().includes(query) ||
+      (r.email || '').toLowerCase().includes(query)
     );
 
-    // Sort
+    // Sort. For numeric score columns, treat null as -Infinity so completed rows
+    // sort above not-started rows when descending.
     visible.sort((a, b) => {
       let va = a[sortCol], vb = b[sortCol];
-      if (sortCol === 'date') { va = new Date(va); vb = new Date(vb); }
+      if (sortCol === 'date') { va = new Date(va).getTime() || 0; vb = new Date(vb).getTime() || 0; }
+      else if (['tp','pd','ta','tpp','overall'].includes(sortCol)) {
+        va = (va == null) ? -Infinity : va;
+        vb = (vb == null) ? -Infinity : vb;
+      }
       if (va < vb) return sortDir === 'asc' ? -1 :  1;
       if (va > vb) return sortDir === 'asc' ?  1 : -1;
       return 0;
@@ -320,45 +373,52 @@
     if (!tbody) return;
 
     if (visible.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="table-empty">${allSessions.length === 0 ? 'No completed assessments yet.' : 'No results match your search.'}</td></tr>`;
-      if (footer) footer.textContent = '0 sessions';
+      tbody.innerHTML = `<tr><td colspan="10" class="table-empty">${allRows.length === 0 ? 'No participants yet.' : 'No results match your search.'}</td></tr>`;
+      if (footer) footer.textContent = '0 participants';
       return;
     }
 
-    tbody.innerHTML = visible.map((s, i) => `
-      <tr data-session-id="${s.id}">
+    const score = v => (v == null) ? '<span style="color:var(--muted);">—</span>' : `${v}%`;
+    const overallCell = r =>
+      r.status === 'completed' ? `${r.overall}%`
+      : r.status === 'in-progress' ? '<span style="color:var(--copper-light);">…</span>'
+      : '<span style="color:var(--muted);">—</span>';
+
+    tbody.innerHTML = visible.map((r, i) => `
+      <tr data-user-id="${r.userId}">
         <td class="td-score" style="color:var(--muted);">${String(i + 1).padStart(2, '0')}</td>
         <td class="td-name">
-          ${s.name}
-          ${s.anon ? '<span class="badge-anon">anon</span>' : ''}
+          ${r.name}
+          ${r.anon ? '<span class="badge-anon">anon</span>' : ''}
+          <span class="badge-status ${r.status}">${r.status === 'in-progress' ? 'in progress' : r.status === 'not-started' ? 'not started' : 'completed'}</span>
         </td>
-        <td class="td-email">${s.email}</td>
-        <td class="td-score">${s.tp}%</td>
-        <td class="td-score">${s.pd}%</td>
-        <td class="td-score">${s.ta}%</td>
-        <td class="td-score">${s.tpp}%</td>
-        <td class="td-overall">${s.overall}%</td>
-        <td class="td-date">${formatDate(s.date)}</td>
+        <td class="td-email">${r.email}</td>
+        <td class="td-score">${score(r.tp)}</td>
+        <td class="td-score">${score(r.pd)}</td>
+        <td class="td-score">${score(r.ta)}</td>
+        <td class="td-score">${score(r.tpp)}</td>
+        <td class="td-overall">${overallCell(r)}</td>
+        <td class="td-date">${formatDate(r.date)}</td>
         <td class="td-actions">
-          <button class="btn-row-delete" type="button" data-action="delete-session" data-session-id="${s.id}" data-participant-name="${(s.name || '').replace(/"/g, '&quot;')}" title="Delete this session">
+          <button class="btn-row-delete" type="button" data-action="delete-participant" data-user-id="${r.userId}" data-participant-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Delete this participant and all their data">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </td>
       </tr>
     `).join('');
 
-    // Delegated click handler for delete buttons (idempotent — replaces tbody listeners on each render via a single delegated listener attached once)
+    // Delegated click handler for delete buttons (attached once)
     if (!tbody._deleteWired) {
       tbody.addEventListener('click', e => {
-        const btn = e.target.closest('[data-action="delete-session"]');
+        const btn = e.target.closest('[data-action="delete-participant"]');
         if (!btn) return;
         e.preventDefault();
-        deleteSession(btn.dataset.sessionId, btn.dataset.participantName);
+        deleteParticipant(btn.dataset.userId, btn.dataset.participantName);
       });
       tbody._deleteWired = true;
     }
 
-    if (footer) footer.textContent = `${visible.length} of ${allSessions.length} session${allSessions.length !== 1 ? 's' : ''}`;
+    if (footer) footer.textContent = `${visible.length} of ${allRows.length} participant${allRows.length !== 1 ? 's' : ''}`;
   }
 
   // Column sort wiring
@@ -379,18 +439,19 @@
   // CSV export
   // -------------------------------------------------------------------------
   function exportCSV() {
-    const headers = ['#', 'Name', 'Email', 'Anonymous', 'TP', 'PD', 'TA', 'TPP', 'Overall', 'Completed At'];
-    const rows = allSessions.map((s, i) => [
-      i + 1, s.name, s.email, s.anon ? 'Yes' : 'No',
-      s.tp, s.pd, s.ta, s.tpp, s.overall,
-      new Date(s.date).toLocaleString(),
+    const headers = ['#', 'Name', 'Email', 'Anonymous', 'Status', 'TP', 'PD', 'TA', 'TPP', 'Overall', 'Last Activity'];
+    const cell    = v => v == null ? '' : v;
+    const rows    = allRows.map((r, i) => [
+      i + 1, r.name, r.email, r.anon ? 'Yes' : 'No', r.status,
+      cell(r.tp), cell(r.pd), cell(r.ta), cell(r.tpp), cell(r.overall),
+      r.date ? new Date(r.date).toLocaleString() : '',
     ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `PEP-sessions_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `PEP-participants_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
