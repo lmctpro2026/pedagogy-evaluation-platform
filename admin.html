@@ -131,7 +131,7 @@
               <th data-sort="ta" title="Technology Adoption" style="text-align:right;">TA</th>
               <th data-sort="tpp" title="Techno-Pedagogical Practice" style="text-align:right;">TPP</th>
               <th data-sort="overall" class="sort-desc" style="text-align:right;">Overall</th>
-              <th data-sort="date">Completed</th>
+              <th data-sort="date">Last Activity</th>
               <th style="text-align:right; cursor:default;" aria-label="Actions"></th>
             </tr>
           </thead>
@@ -153,13 +153,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="js/supabase.js"></script>
-<script>
-  // Show logout button once Supabase is ready
-  document.addEventListener('DOMContentLoaded', () => {
-    const logoutBtn = document.getElementById('admin-logout');
-    if (logoutBtn) logoutBtn.hidden = false;
-  });
-</script>
 <script src="js/admin.js"></script>
 </body>
 </html>

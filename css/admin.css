@@ -20,6 +20,13 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Make sure the HTML `hidden` attribute always wins. Some component rules
+   (e.g. `#admin-gate { display: flex }`) have higher specificity than the
+   user-agent `[hidden]` rule and would otherwise leave hidden elements
+   visible — which is how the auth gate and the dashboard ended up showing
+   on the same screen. */
+[hidden] { display: none !important; }
+
 body {
   font-family: 'Poppins', sans-serif;
   background: var(--bg);
@@ -393,6 +400,33 @@ table.admin-table {
   border-radius: 4px;
   margin-left: .4rem;
   vertical-align: middle;
+}
+
+.badge-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: .18rem .5rem;
+  border-radius: 4px;
+  margin-left: .4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.badge-status.completed {
+  color: var(--success);
+  background: rgba(109,174,111,0.12);
+  border: 1px solid rgba(109,174,111,0.32);
+}
+.badge-status.in-progress {
+  color: var(--copper-light);
+  background: rgba(232,168,78,0.10);
+  border: 1px solid rgba(232,168,78,0.32);
+}
+.badge-status.not-started {
+  color: var(--muted);
+  background: rgba(107,100,89,0.10);
+  border: 1px solid rgba(107,100,89,0.25);
 }
 
 .td-actions { text-align: right; width: 1%; white-space: nowrap; }
