@@ -9,8 +9,8 @@
 // The RESEND_API_KEY lives only in the Edge Function (server-side secret).
 // ===========================================================================
 
-const SUPABASE_URL      = 'https://your-project.supabase.co';  // ← replace
-const SUPABASE_ANON_KEY = 'your-anon-key';                     // ← replace
+const SUPABASE_URL      = 'https://ipmrufgdykvjvejvquin.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwbXJ1ZmdkeWt2anZlanZxdWluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjE1MzEsImV4cCI6MjA5NTIzNzUzMX0.yf0BUfjRPJw-0eE2eKDKyx1CoISA5d431rxMV6P8Zq4';
 
 const _isPlaceholder = SUPABASE_URL.includes('your-project') ||
                        SUPABASE_ANON_KEY === 'your-anon-key';
