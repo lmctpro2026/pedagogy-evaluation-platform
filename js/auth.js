@@ -6,6 +6,10 @@
   const $  = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
 
+  // Pending OTP state — set when registration needs email verification
+  let pendingEmail = '';
+  let pendingName  = '';
+
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
   // -----------------------------------------------------------------------
@@ -59,6 +63,10 @@
     if (sBars) { sBars.className = 'strength'; }
     const sLbl = $('#r-strength-label');
     if (sLbl) sLbl.textContent = '';
+    // Reset OTP state
+    pendingEmail = '';
+    pendingName  = '';
+    switchTab('signin');
     syncSubmitButtons();
   }
   window.PED = window.PED || {};
@@ -72,6 +80,11 @@
   function switchTab(name) {
     $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
     $$('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    // Hide the tab row when showing the OTP verification step
+    const tabsEl = $('.tabs');
+    if (tabsEl) tabsEl.style.display = name === 'verify' ? 'none' : '';
+    const titleEl = $('#modal-title');
+    if (titleEl) titleEl.textContent = name === 'verify' ? 'Verify your email' : 'Start the assessment';
   }
 
   // -----------------------------------------------------------------------
@@ -215,6 +228,77 @@
       await startAnonymous();
     });
 
+    // ---- OTP panel wiring ----
+    const otpInput  = document.getElementById('otp-code');
+    const otpSubmit = document.getElementById('otp-submit');
+    const otpResend = document.getElementById('otp-resend');
+    const otpErr    = document.getElementById('otp-code-err');
+
+    if (otpInput) {
+      otpInput.addEventListener('input', () => {
+        // Allow digits only, auto-enable submit at 6 chars
+        otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
+        if (otpSubmit) otpSubmit.disabled = otpInput.value.length !== 6;
+        if (otpErr) otpErr.textContent = '';
+      });
+    }
+
+    if (otpSubmit) {
+      otpSubmit.addEventListener('click', async () => {
+        const code = (otpInput?.value || '').trim();
+        if (code.length !== 6) return;
+        const sb = window.PED.supabase;
+        const origText = otpSubmit.innerHTML;
+        otpSubmit.disabled = true;
+        otpSubmit.innerHTML = 'Verifying…';
+        try {
+          if (sb) {
+            const { data, error } = await sb.auth.verifyOtp({
+              email: pendingEmail,
+              token: code,
+              type:  'signup',
+            });
+            if (error) {
+              const msg = (error.message || '').toLowerCase();
+              if (otpErr) otpErr.textContent = msg.includes('expired')
+                ? 'Code expired — please resend.' : msg.includes('invalid') || msg.includes('otp')
+                ? 'Incorrect code. Please try again.' : (error.message || 'Verification failed.');
+              otpSubmit.disabled = false;
+              otpSubmit.innerHTML = origText;
+              return;
+            }
+            if (data?.user) {
+              await upsertUserProfile(data.user.id, {
+                email: pendingEmail, full_name: pendingName,
+                is_anonymous: false, consent_given: true,
+              });
+            }
+          }
+          const displayName = pendingName.split(' ')[0];
+          storeUser(displayName, pendingEmail);
+          persistLocal({ mode: 'register', email: pendingEmail, displayName, fullName: pendingName, ts: Date.now() });
+          closeModal();
+          setTimeout(() => { window.location.href = 'questionnaire.html'; }, 400);
+        } catch (err) {
+          console.error('[auth] OTP verify error:', err);
+          if (otpErr) otpErr.textContent = 'Verification failed. Please try again.';
+          otpSubmit.disabled = false;
+          otpSubmit.innerHTML = origText;
+        }
+      });
+    }
+
+    if (otpResend) {
+      otpResend.addEventListener('click', async () => {
+        const sb = window.PED.supabase;
+        if (!sb || !pendingEmail) return;
+        try {
+          await sb.auth.resend({ type: 'signup', email: pendingEmail });
+          showToast('New code sent — check your inbox.');
+        } catch { showToast('Could not resend. Please try again.'); }
+      });
+    }
+
     syncSubmitButtons();
   });
 
@@ -316,7 +400,14 @@
           });
         }
         if (data?.user && !data?.session) {
-          showToast('Account created. Continuing to your assessment.');
+          // Email confirmation required — show OTP panel
+          pendingEmail = email;
+          pendingName  = name;
+          const otpEmailEl = document.getElementById('otp-email-display');
+          if (otpEmailEl) otpEmailEl.textContent = email;
+          setSubmitting('r-submit', false);
+          switchTab('verify');
+          return;
         }
       }
       const displayName = name.split(' ')[0];
