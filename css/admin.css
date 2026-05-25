@@ -395,6 +395,31 @@ table.admin-table {
   vertical-align: middle;
 }
 
+.td-actions { text-align: right; width: 1%; white-space: nowrap; }
+.btn-row-delete {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: .35rem .45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s var(--ease), background .15s var(--ease), border-color .15s var(--ease);
+}
+.btn-row-delete:hover {
+  color: var(--danger);
+  background: rgba(200,74,74,0.08);
+  border-color: rgba(200,74,74,0.25);
+}
+.btn-row-delete:active { transform: scale(.94); }
+.btn-row-delete:disabled { opacity: .4; cursor: not-allowed; }
+.btn-row-delete:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
 .table-empty {
   padding: 3rem 1.5rem;
   text-align: center;
