@@ -103,54 +103,76 @@
 
   // ---------------- PDF export ----------------
   async function exportPDF() {
-    const btn = $('#a-pdf');
-    const original = btn ? btn.innerHTML : '';
-    if (btn) { btn.disabled = true; btn.innerHTML = 'Preparing PDF…'; }
+    const btns = [document.getElementById('a-pdf'), document.getElementById('a-pdf-2')].filter(Boolean);
+    const originals = btns.map(b => b.innerHTML);
+    btns.forEach(b => { b.disabled = true; b.innerHTML = 'Preparing PDF…'; });
 
-    const page = $('#report-page');
+    const page = document.getElementById('report-page');
     page.classList.add('is-printing');
-    // Hide cursor for capture
     document.body.classList.add('cursor-hidden');
+
+    // Scroll to top so html2canvas sees the full page from y=0
+    const prevScrollY = window.scrollY;
+    window.scrollTo(0, 0);
 
     try {
       const canvas = await html2canvas(page, {
-        scale: 2,
+        scale:           2,
         backgroundColor: '#ffffff',
-        useCORS: true,
-        scrollY: -window.scrollY,
-        windowWidth: page.scrollWidth,
+        useCORS:         true,
+        logging:         false,
+        windowWidth:     900,   // fixed desktop width — avoids mobile reflow
       });
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pdf    = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageW  = pdf.internal.pageSize.getWidth();   // 595.28 pt
+      const pageH  = pdf.internal.pageSize.getHeight();  // 841.89 pt
+      const margin = 28; // pt — top/left/right/bottom white space
+      const contentW  = pageW - 2 * margin;
+      const contentH  = pageH - 2 * margin;
 
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 24;
-      const imgW = pageW - margin * 2;
-      const imgH = canvas.height * (imgW / canvas.width);
+      // px ↔ pt scale: how many canvas pixels equal one pt of content width
+      const pxPerPt   = canvas.width / contentW;
+      // how many canvas pixels fill one page of content height
+      const pxPerPage = Math.round(contentH * pxPerPt);
 
-      let heightLeft = imgH;
-      let position = margin;
-      pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-      heightLeft -= (pageH - margin * 2);
+      let yPx       = 0;
+      let firstPage = true;
 
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = margin - (imgH - heightLeft);
-        pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-        heightLeft -= (pageH - margin * 2);
+      while (yPx < canvas.height) {
+        if (!firstPage) pdf.addPage();
+
+        // Slice exactly this page's strip from the master canvas
+        const sliceH = Math.min(pxPerPage, canvas.height - yPx);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width  = canvas.width;
+        sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, sliceH);
+        ctx.drawImage(canvas, 0, yPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+        // Convert slice height from px to pts for jsPDF
+        const slicePtH  = sliceH / pxPerPt;
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+        pdf.addImage(sliceData, 'JPEG', margin, margin, contentW, slicePtH);
+
+        yPx      += sliceH;
+        firstPage = false;
       }
 
       const stamp = new Date().toISOString().slice(0, 10);
       pdf.save(`Pedagogy-Report_${stamp}.pdf`);
+
     } catch (err) {
       console.error('[report] PDF export failed:', err);
       alert('Sorry — PDF export failed. Please try again.');
     } finally {
       page.classList.remove('is-printing');
       document.body.classList.remove('cursor-hidden');
-      if (btn) { btn.disabled = false; btn.innerHTML = original; }
+      window.scrollTo(0, prevScrollY);
+      btns.forEach((b, i) => { b.disabled = false; b.innerHTML = originals[i]; });
     }
   }
 
