@@ -207,34 +207,48 @@
   }
 
   // -------------------------------------------------------------------------
-  // Load data from Supabase — one row per participant (registered or anonymous),
-  // with their most-recent session (if any) folded in.
+  // Load data from Supabase — one row per participant, with their most recent
+  // session folded in. Two parallel queries (users + sessions) merged on
+  // user_id OR participant_email so historically-orphaned sessions still
+  // attach to the right participant.
   // -------------------------------------------------------------------------
+  let allSessionsCache = [];   // full sessions list, used by the profile modal
+
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
 
     try {
-      const { data: users, error } = await sb
-        .from('users')
-        .select(`
-          id, email, full_name, is_anonymous, created_at,
-          sessions ( id, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at, participant_email )
-        `)
-        .order('created_at', { ascending: false });
+      const [usersRes, sessionsRes] = await Promise.all([
+        sb.from('users')
+          .select('id, email, full_name, is_anonymous, created_at')
+          .order('created_at', { ascending: false }),
+        sb.from('sessions')
+          .select('id, user_id, participant_email, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at')
+          .order('created_at', { ascending: false }),
+      ]);
 
-      if (error) throw error;
+      if (usersRes.error)    throw usersRes.error;
+      if (sessionsRes.error) throw sessionsRes.error;
 
-      allRows = (users || [])
+      allSessionsCache = sessionsRes.data || [];
+      const users      = usersRes.data || [];
+
+      allRows = users
         // Hide admin accounts from the participant list — they're not subjects
         .filter(u => !ADMIN_EMAILS.includes((u.email || '').toLowerCase()))
         .map(u => {
-          const sessions = (u.sessions || []).slice().sort((a, b) => {
+          // Match by user_id OR by participant_email (case-insensitive)
+          const userEmailLower = (u.email || '').toLowerCase();
+          const sessions = allSessionsCache.filter(s =>
+            s.user_id === u.id ||
+            (userEmailLower && s.participant_email && s.participant_email.toLowerCase() === userEmailLower)
+          ).slice().sort((a, b) => {
             const ad = new Date(a.completed_at || a.created_at).getTime();
             const bd = new Date(b.completed_at || b.created_at).getTime();
-            return bd - ad;   // newest first
+            return bd - ad;
           });
-          // Prefer the most-recent completed session if any; else most recent attempt
+
           const completed = sessions.find(s => s.completed_at);
           const latest    = completed || sessions[0] || null;
           const status    = !latest ? 'not-started'
@@ -251,6 +265,7 @@
             name:         u.full_name || (u.is_anonymous ? 'Anonymous' : '—'),
             email:        u.email || latest?.participant_email || '—',
             anon:         u.is_anonymous ?? false,
+            registered:   u.created_at,
             status,
             tp:           (latest && latest.completed_at) ? +(+latest.score_tp  ?? 0).toFixed(1) : null,
             pd:           (latest && latest.completed_at) ? +(+latest.score_pd  ?? 0).toFixed(1) : null,
@@ -259,6 +274,7 @@
             overall,
             date:         latest?.completed_at || latest?.created_at || u.created_at,
             sessionCount: sessions.length,
+            sessions,
           };
         });
 
@@ -407,15 +423,21 @@
       </tr>
     `).join('');
 
-    // Delegated click handler for delete buttons (attached once)
-    if (!tbody._deleteWired) {
+    // Delegated click handler (attached once). Handles both delete and
+    // row-clicks that open the profile modal.
+    if (!tbody._clickWired) {
       tbody.addEventListener('click', e => {
-        const btn = e.target.closest('[data-action="delete-participant"]');
-        if (!btn) return;
-        e.preventDefault();
-        deleteParticipant(btn.dataset.userId, btn.dataset.participantName);
+        const delBtn = e.target.closest('[data-action="delete-participant"]');
+        if (delBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          deleteParticipant(delBtn.dataset.userId, delBtn.dataset.participantName);
+          return;
+        }
+        const row = e.target.closest('tr[data-user-id]');
+        if (row) openParticipantModal(row.dataset.userId);
       });
-      tbody._deleteWired = true;
+      tbody._clickWired = true;
     }
 
     if (footer) footer.textContent = `${visible.length} of ${allRows.length} participant${allRows.length !== 1 ? 's' : ''}`;
@@ -455,6 +477,147 @@
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  // -------------------------------------------------------------------------
+  // Participant profile modal — drilldown into one user
+  // -------------------------------------------------------------------------
+  const STATUS_LABELS = { 'completed': 'completed', 'in-progress': 'in progress', 'not-started': 'not started' };
+
+  function questionByCode(code) {
+    return (window.PED?.QUESTIONS || []).find(q => q.id === code) || null;
+  }
+  function likertLabel(v) {
+    return ((window.PED?.LIKERT || []).find(l => l.value === v) || {}).label || String(v);
+  }
+
+  function sessionCardHtml(s) {
+    const isCompleted  = !!s.completed_at;
+    const isInProgress = !isCompleted;
+    const status       = isCompleted ? 'completed' : 'in-progress';
+    const overall = isCompleted
+      ? +(((+s.score_tp || 0) + (+s.score_pd || 0) + (+s.score_ta || 0) + (+s.score_tpp || 0)) / 4).toFixed(1)
+      : null;
+
+    const scores = isCompleted ? `
+      <div class="pm-scores">
+        <div><span class="pm-score-label">TP</span> ${(+s.score_tp).toFixed(1)}%</div>
+        <div><span class="pm-score-label">PD</span> ${(+s.score_pd).toFixed(1)}%</div>
+        <div><span class="pm-score-label">TA</span> ${(+s.score_ta).toFixed(1)}%</div>
+        <div><span class="pm-score-label">TPP</span> ${(+s.score_tpp).toFixed(1)}%</div>
+        <div class="pm-score-overall"><span class="pm-score-label">Overall</span> ${overall}%</div>
+      </div>
+    ` : `<div class="pm-incomplete-note">Started but not finished — no scores recorded.</div>`;
+
+    return `
+      <div class="pm-session-card" data-session-id="${s.id}">
+        <div class="pm-session-head">
+          <div class="pm-session-meta">
+            <span class="badge-status ${status}">${STATUS_LABELS[status]}</span>
+            <span class="pm-session-date">Started ${formatDate(s.created_at)}</span>
+            ${isCompleted ? `<span class="pm-session-date">· Completed ${formatDate(s.completed_at)}</span>` : ''}
+          </div>
+          <button class="btn btn-ghost pm-toggle-responses" type="button" data-session-id="${s.id}">View responses</button>
+        </div>
+        ${scores}
+        <div class="pm-responses" data-loaded="0" hidden></div>
+      </div>
+    `;
+  }
+
+  async function openParticipantModal(userId) {
+    const row = allRows.find(r => r.userId === userId);
+    if (!row) return;
+    const modal = $('#participant-modal');
+    if (!modal) return;
+
+    $('#pm-title').textContent     = row.name;
+    $('#pm-email').textContent     = row.email;
+    const statusEl = $('#pm-status');
+    statusEl.className   = `badge-status ${row.status}`;
+    statusEl.textContent = STATUS_LABELS[row.status];
+    $('#pm-anon').hidden     = !row.anon;
+    $('#pm-registered').textContent = formatDate(row.registered);
+
+    const list = $('#pm-sessions');
+    list.innerHTML = row.sessions.length
+      ? row.sessions.map(sessionCardHtml).join('')
+      : '<p style="color:var(--muted);padding:1rem 0;">No sessions yet — this participant registered but has not started the assessment.</p>';
+
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeParticipantModal() {
+    const modal = $('#participant-modal');
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  async function fetchAndRenderResponses(sessionId, container) {
+    if (container.dataset.loaded === '1') return;
+    const sb = window.PED?.supabase;
+    if (!sb) return;
+    container.innerHTML = '<div style="color:var(--muted);padding:.5rem 0;">Loading responses…</div>';
+    try {
+      const { data, error } = await sb.from('responses')
+        .select('question_id, category, answer_value, answered_at')
+        .eq('session_id', sessionId)
+        .order('answered_at', { ascending: true });
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div style="color:var(--muted);padding:.5rem 0;">No responses recorded for this session.</div>';
+      } else {
+        container.innerHTML = '<table class="pm-responses-table"><thead><tr><th>#</th><th>Question</th><th>Category</th><th>Answer</th></tr></thead><tbody>'
+          + data.map((r, i) => {
+              const q = questionByCode(r.question_id);
+              const text = q ? q.text : '(question text unavailable)';
+              return `<tr>
+                <td class="pm-resp-num">${String(i + 1).padStart(2, '0')}</td>
+                <td class="pm-resp-q">${text}</td>
+                <td class="pm-resp-cat"><span class="cat-pill cat-${r.category}">${r.category}</span></td>
+                <td class="pm-resp-a">${r.answer_value} · ${likertLabel(r.answer_value)}</td>
+              </tr>`;
+            }).join('')
+          + '</tbody></table>';
+      }
+      container.dataset.loaded = '1';
+    } catch (err) {
+      console.error('[admin] fetchResponses error:', err);
+      container.innerHTML = `<div style="color:var(--danger);padding:.5rem 0;">Failed to load responses: ${err.message}</div>`;
+    }
+  }
+
+  // Wire modal interactions once
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal   = document.getElementById('participant-modal');
+    const closeBtn = document.getElementById('pm-close');
+    closeBtn?.addEventListener('click', closeParticipantModal);
+    modal?.addEventListener('click', e => {
+      // Click on backdrop (not the card itself) → close
+      if (e.target === modal) closeParticipantModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal && !modal.hidden) closeParticipantModal();
+    });
+    // Toggle responses (delegated)
+    modal?.addEventListener('click', e => {
+      const tog = e.target.closest('.pm-toggle-responses');
+      if (!tog) return;
+      const card = tog.closest('.pm-session-card');
+      const container = card?.querySelector('.pm-responses');
+      if (!container) return;
+      if (container.hidden) {
+        container.hidden = false;
+        tog.textContent = 'Hide responses';
+        fetchAndRenderResponses(tog.dataset.sessionId, container);
+      } else {
+        container.hidden = true;
+        tog.textContent = 'View responses';
+      }
+    });
+  });
 
   // -------------------------------------------------------------------------
   // Helpers

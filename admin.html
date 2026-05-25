@@ -150,9 +150,31 @@
 </div><!-- /admin-dashboard -->
 
 <!-- ========================= SCRIPTS ========================= -->
+<!-- ========================= PARTICIPANT PROFILE MODAL ========================= -->
+<div id="participant-modal" class="pm-backdrop" hidden>
+  <div class="pm-card" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+    <button class="pm-close" id="pm-close" type="button" aria-label="Close">×</button>
+    <div class="pm-header">
+      <div class="pm-eyebrow">Participant Profile</div>
+      <h2 class="pm-name" id="pm-title">—</h2>
+      <div class="pm-meta">
+        <span class="pm-email" id="pm-email">—</span>
+        <span class="badge-status not-started" id="pm-status">—</span>
+        <span class="badge-anon" id="pm-anon" hidden>anon</span>
+      </div>
+      <div class="pm-registered-line">Registered <span id="pm-registered">—</span></div>
+    </div>
+    <div class="pm-body">
+      <div class="section-title" style="margin-bottom:.75rem;">Sessions</div>
+      <div id="pm-sessions"></div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="js/supabase.js"></script>
+<script src="js/questions.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
