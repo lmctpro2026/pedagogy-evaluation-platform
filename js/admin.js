@@ -127,6 +127,75 @@
 
     // Refresh
     $('#admin-refresh')?.addEventListener('click', () => loadData(window.PED.supabase));
+
+    // Reset all test data — only visible if ?debug=1 is in the URL
+    const debugMode = new URLSearchParams(window.location.search).get('debug') === '1';
+    const resetBtn  = $('#admin-reset-all');
+    if (resetBtn && debugMode) {
+      resetBtn.hidden = false;
+      resetBtn.addEventListener('click', () => resetAllTestData());
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Per-row session delete
+  // -------------------------------------------------------------------------
+  async function deleteSession(sessionId, participantName) {
+    if (!sessionId) return;
+    const label = participantName || 'this session';
+    if (!window.confirm(`Delete the session for "${label}"?\n\nThis removes the session and all its question responses. Cannot be undone.`)) return;
+
+    const sb = window.PED?.supabase;
+    if (!sb) return;
+    try {
+      const { error } = await sb.from('sessions').delete().eq('id', sessionId);
+      if (error) throw error;
+      // Optimistic update — remove from local list and re-render
+      allSessions = allSessions.filter(s => s.id !== sessionId);
+      renderStats();
+      renderChart();
+      renderTable();
+      updateLastUpdated();
+    } catch (err) {
+      console.error('[admin] delete error:', err);
+      window.alert(`Failed to delete session: ${err.message}`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Reset all test data (debug button — wipes everything except admin users)
+  // -------------------------------------------------------------------------
+  async function resetAllTestData() {
+    const sb = window.PED?.supabase;
+    if (!sb) return;
+
+    if (!window.confirm(
+      'RESET ALL TEST DATA?\n\n' +
+      'This wipes every session, every response, and every non-admin user account from the database. Admin accounts are preserved.\n\n' +
+      'This cannot be undone.'
+    )) return;
+    if (!window.confirm('Are you absolutely sure? Type-check failed accounts will be permanently deleted.')) return;
+
+    const btn = document.getElementById('admin-reset-all');
+    const orig = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Resetting…'; }
+
+    try {
+      const { data, error } = await sb.rpc('admin_reset_test_data');
+      if (error) throw error;
+      window.alert(
+        'Reset complete.\n' +
+        `Sessions deleted: ${data?.deleted_sessions ?? '?'}\n` +
+        `Profile rows deleted: ${data?.deleted_users ?? '?'}\n` +
+        `Auth accounts deleted: ${data?.deleted_auth_users ?? '?'}`
+      );
+      await loadData(sb);
+    } catch (err) {
+      console.error('[admin] reset error:', err);
+      window.alert(`Reset failed: ${err.message}`);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -134,7 +203,7 @@
   // -------------------------------------------------------------------------
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
-    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Loading…</td></tr>';
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
 
     try {
       const { data: sessions, error } = await sb
@@ -164,7 +233,7 @@
       updateLastUpdated();
     } catch (err) {
       console.error('[admin] loadData error:', err);
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="9" class="table-empty" style="color:var(--danger);">Error loading data: ${err.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="table-empty" style="color:var(--danger);">Error loading data: ${err.message}</td></tr>`;
     }
   }
 
@@ -251,13 +320,13 @@
     if (!tbody) return;
 
     if (visible.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="table-empty">${allSessions.length === 0 ? 'No completed assessments yet.' : 'No results match your search.'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="table-empty">${allSessions.length === 0 ? 'No completed assessments yet.' : 'No results match your search.'}</td></tr>`;
       if (footer) footer.textContent = '0 sessions';
       return;
     }
 
     tbody.innerHTML = visible.map((s, i) => `
-      <tr>
+      <tr data-session-id="${s.id}">
         <td class="td-score" style="color:var(--muted);">${String(i + 1).padStart(2, '0')}</td>
         <td class="td-name">
           ${s.name}
@@ -270,8 +339,24 @@
         <td class="td-score">${s.tpp}%</td>
         <td class="td-overall">${s.overall}%</td>
         <td class="td-date">${formatDate(s.date)}</td>
+        <td class="td-actions">
+          <button class="btn-row-delete" type="button" data-action="delete-session" data-session-id="${s.id}" data-participant-name="${(s.name || '').replace(/"/g, '&quot;')}" title="Delete this session">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </td>
       </tr>
     `).join('');
+
+    // Delegated click handler for delete buttons (idempotent — replaces tbody listeners on each render via a single delegated listener attached once)
+    if (!tbody._deleteWired) {
+      tbody.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action="delete-session"]');
+        if (!btn) return;
+        e.preventDefault();
+        deleteSession(btn.dataset.sessionId, btn.dataset.participantName);
+      });
+      tbody._deleteWired = true;
+    }
 
     if (footer) footer.textContent = `${visible.length} of ${allSessions.length} session${allSessions.length !== 1 ? 's' : ''}`;
   }
