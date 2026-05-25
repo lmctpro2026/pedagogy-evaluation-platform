@@ -414,20 +414,48 @@
     setSubmitting('l-submit', true);
     try {
       if (sb) {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        console.log('[auth] signInWithPassword →', { email: normEmail(email) });
+        const { data, error } = await sb.auth.signInWithPassword({ email: normEmail(email), password });
+        console.log('[auth] signInWithPassword ←', { error, hasSession: !!data?.session });
+
         if (error) {
-          showFieldError('l-pass', error.message?.toLowerCase().includes('invalid')
+          const msg = (error.message || '').toLowerCase();
+
+          // "Email not confirmed" — user registered but never finished OTP.
+          // Drop them back on the verify panel and resend a fresh code.
+          if (msg.includes('not confirmed') || msg.includes('email not confirmed')) {
+            console.warn('[auth] sign-in blocked — email not confirmed, restoring OTP panel');
+            pendingEmail = normEmail(email);
+            pendingName  = '';
+            savePending();
+            const otpEmailEl = document.getElementById('otp-email-display');
+            if (otpEmailEl) otpEmailEl.textContent = pendingEmail;
+            setSubmitting('l-submit', false);
+            switchTab('verify');
+            // Auto-resend a fresh code
+            try {
+              await sb.auth.resend({ type: 'signup', email: pendingEmail });
+              showToast('A new verification code was sent to your inbox.');
+            } catch (resendErr) {
+              console.warn('[auth] resend after not-confirmed error:', resendErr);
+              showToast('Please check your inbox for the verification code, or click Resend.');
+            }
+            return;
+          }
+
+          showFieldError('l-pass', msg.includes('invalid') || msg.includes('credentials')
             ? 'Invalid email or password.' : (error.message || 'Sign-in failed.'));
           setSubmitting('l-submit', false);
           return;
         }
         if (data?.user) {
-          await upsertUserProfile(data.user.id, { email, is_anonymous: false, consent_given: true });
+          await upsertUserProfile(data.user.id, { email: normEmail(email), is_anonymous: false, consent_given: true });
         }
       }
-      const displayName = email.split('@')[0];
-      storeUser(displayName, email);
-      persistLocal({ mode: 'email', email, displayName, ts: Date.now() });
+      const ne = normEmail(email);
+      const displayName = ne.split('@')[0];
+      storeUser(displayName, ne);
+      persistLocal({ mode: 'email', email: ne, displayName, ts: Date.now() });
       closeModal();
       window.location.href = 'questionnaire.html';
     } catch (err) {
