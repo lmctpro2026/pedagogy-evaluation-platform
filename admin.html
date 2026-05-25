@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Dashboard — Pedagogy Evaluation Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700;0,900;1,700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+<!-- ========================= NAV ========================= -->
+<header class="admin-nav">
+  <div class="admin-nav-inner">
+    <a href="index.html" class="admin-brand">
+      <span class="mark">P</span>
+      <span>Pedagogy<span style="opacity:.5"> / Admin</span></span>
+      <span class="pill">Dashboard</span>
+    </a>
+    <div class="admin-nav-right">
+      <span class="admin-user-pill" id="admin-user-pill"></span>
+      <button class="btn btn-ghost" id="admin-logout" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ========================= LOGIN GATE ========================= -->
+<div id="admin-gate">
+  <div class="gate-card">
+    <div class="gate-eyebrow">Admin Access</div>
+    <h1 class="gate-title">Sign in to continue</h1>
+    <p class="gate-sub">Use your admin account to access the dashboard.</p>
+
+    <form id="admin-login-form" novalidate>
+      <div class="gate-field">
+        <label for="gate-email">Email address</label>
+        <input id="gate-email" type="email" placeholder="admin@university.edu" autocomplete="email" />
+      </div>
+      <div class="gate-field">
+        <label for="gate-pass">Password</label>
+        <input id="gate-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <span class="gate-err" id="gate-err"></span>
+      <button class="btn btn-primary" id="gate-submit" type="submit">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- ========================= DASHBOARD ========================= -->
+<div id="admin-dashboard" hidden>
+  <div class="admin-wrap">
+
+    <!-- Header -->
+    <div class="dash-header">
+      <div>
+        <div class="dash-eyebrow">Pedagogy Evaluation Platform · Firmin (2020)</div>
+        <h1 class="dash-title">Admin Dashboard</h1>
+      </div>
+      <div class="dash-actions">
+        <span class="last-updated" id="last-updated"></span>
+        <button class="btn btn-secondary" id="admin-refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary" id="admin-export-csv">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Assessments</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">completed sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Average Score</div>
+        <div class="stat-value copper" id="stat-avg">—</div>
+        <div class="stat-sub">across all participants</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Registered Users</div>
+        <div class="stat-value" id="stat-reg">—</div>
+        <div class="stat-sub" id="stat-reg-sub">registered · anonymous</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed Today</div>
+        <div class="stat-value" id="stat-today">—</div>
+        <div class="stat-sub">assessments today</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section">
+      <div class="section-title">Category Averages</div>
+      <div class="chart-wrap">
+        <canvas id="admin-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+      <div class="table-toolbar">
+        <div class="table-toolbar-left">
+          <div class="section-title" style="margin-bottom:0;">Participant Sessions</div>
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="admin-search" type="text" placeholder="Search name or email…" />
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-sort="name">Participant</th>
+              <th data-sort="email">Email</th>
+              <th data-sort="tp" title="Teaching Practice" style="text-align:right;">TP</th>
+              <th data-sort="pd" title="Pedagogical Development" style="text-align:right;">PD</th>
+              <th data-sort="ta" title="Technology Adoption" style="text-align:right;">TA</th>
+              <th data-sort="tpp" title="Techno-Pedagogical Practice" style="text-align:right;">TPP</th>
+              <th data-sort="overall" class="sort-desc" style="text-align:right;">Overall</th>
+              <th data-sort="date">Completed</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody">
+            <tr><td colspan="9" class="table-empty">Loading sessions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span id="table-footer-count"></span>
+      </div>
+    </div>
+
+  </div><!-- /admin-wrap -->
+</div><!-- /admin-dashboard -->
+
+<!-- ========================= SCRIPTS ========================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+  // Show logout button once Supabase is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.getElementById('admin-logout');
+    if (logoutBtn) logoutBtn.hidden = false;
+  });
+</script>
+<script src="js/admin.js"></script>
+</body>
+</html>

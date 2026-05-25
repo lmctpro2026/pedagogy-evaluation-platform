@@ -7,7 +7,7 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const SALLY_EMAIL    = 'sally.firmin@federation.edu.au';
+const SALLY_EMAIL    = 'mushfiqurr@students.federation.edu.au';
 const FROM_EMAIL     = 'Pedagogy Platform <onboarding@resend.dev>';
 
 const cors = {

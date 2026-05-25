@@ -258,50 +258,38 @@
 
   <div class="section-eyebrow reveal" style="margin-bottom:2.25rem;">ITECH3208 · Capstone Team · Federation University Australia</div>
 
-  <div class="team-layout reveal">
+  <div class="team-grid reveal">
 
-    <!-- Featured: Lead Developer -->
-    <div class="team-featured">
-      <div class="tf-label">Lead Developer</div>
-      <div class="tf-name">Mushfiqur Rahman</div>
-      <p class="tf-desc">
-        Architected and built the full platform end-to-end — from database schema and
-        authentication flows to every pixel of the UI. Responsible for system design,
-        front-end engineering, and production deployment.
-      </p>
-      <div class="tf-tags">
-        <span>Full-Stack Development</span>
-        <span>UI / UX Design</span>
-        <span>Database Architecture</span>
-        <span>Deployment</span>
+    <div class="team-card team-card--lead">
+      <div class="tc-role">Lead Developer</div>
+      <div class="tc-name">Mushfiqur Rahman</div>
+      <div class="tc-tags">
+        <span>Full-Stack</span><span>UI / UX</span><span>DB Architecture</span><span>Deployment</span>
       </div>
     </div>
 
-    <!-- Other contributors -->
-    <div class="team-others">
-      <div class="to-member">
-        <div class="to-info">
-          <span class="to-name">Shafiullah Anik</span>
-          <span class="to-role">Team Member</span>
-        </div>
+    <div class="team-card">
+      <div class="tc-role">Scrum Master</div>
+      <div class="tc-name">Shafiullah Anik</div>
+    </div>
+
+    <div class="team-card">
+      <div class="tc-role">Product Owner</div>
+      <div class="tc-name">Kenny George Joseph</div>
+    </div>
+
+    <div class="team-card">
+      <div class="tc-role">Tester</div>
+      <div class="tc-name">Albin Roy</div>
+    </div>
+
+    <div class="team-card team-card--client">
+      <div class="tc-client-left">
+        <div class="tc-role">Client · Research Supervisor</div>
+        <div class="tc-name">Dr Selena (Sally) Firmin</div>
       </div>
-      <div class="to-member">
-        <div class="to-info">
-          <span class="to-name">Kenny George Joseph</span>
-          <span class="to-role">Team Member</span>
-        </div>
-      </div>
-      <div class="to-member">
-        <div class="to-info">
-          <span class="to-name">Albin Roy</span>
-          <span class="to-role">Team Member</span>
-        </div>
-      </div>
-      <div class="to-member to-client">
-        <div class="to-info">
-          <span class="to-name">Dr Selena (Sally) Firmin</span>
-          <span class="to-role">Client · Research Supervisor · Monash University (2020)</span>
-        </div>
+      <div class="tc-client-right">
+        <span class="tc-sub">Monash University · Firmin (2020)</span>
       </div>
     </div>
 
@@ -420,6 +408,23 @@
       <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account & begin</button>
       <div class="alt-line">Already registered? <button type="button" data-open-modal="signin">Sign in instead</button></div>
     </form>
+
+    <!-- OTP Verification (shown programmatically after register) -->
+    <div class="panel otp-panel" data-panel="verify" id="verify-panel">
+      <div class="otp-intro">
+        <div class="otp-icon">✉</div>
+        <p>We sent a <strong>6-digit code</strong> to</p>
+        <p class="otp-email" id="otp-email-display">your email address</p>
+        <p class="otp-hint">Check your inbox and spam folder. Code expires in 1 hour.</p>
+      </div>
+      <div class="field">
+        <label for="otp-code">Verification code</label>
+        <input id="otp-code" type="text" inputmode="numeric" placeholder="000000" maxlength="6" autocomplete="one-time-code" />
+        <span class="err" id="otp-code-err"></span>
+      </div>
+      <button class="btn btn-primary" id="otp-submit" type="button" disabled>Verify &amp; begin →</button>
+      <div class="alt-line">Didn't receive it? <button type="button" id="otp-resend">Resend code</button></div>
+    </div>
 
     <!-- Anonymous -->
     <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>

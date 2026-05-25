@@ -244,6 +244,51 @@
 }
 .alt-line button:hover { color: var(--copper-light); text-decoration: underline; }
 
+/* OTP Verification Panel */
+.otp-panel { text-align: center; }
+
+.otp-intro {
+  padding: 1.5rem 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.otp-icon {
+  font-size: 2.25rem;
+  margin-bottom: .75rem;
+  display: block;
+}
+.otp-intro p {
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.55;
+  margin-bottom: .25rem;
+}
+.otp-intro p strong { color: var(--cream); }
+.otp-email {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .82rem !important;
+  color: var(--copper-light) !important;
+  letter-spacing: .04em;
+  word-break: break-all;
+  margin: .2rem 0 .5rem !important;
+}
+.otp-hint {
+  font-size: .78rem !important;
+  color: rgba(107,100,89,0.6) !important;
+  margin-top: .35rem !important;
+}
+
+#otp-code {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem !important;
+  font-weight: 700;
+  letter-spacing: .35em;
+  padding: 1rem !important;
+}
+
 @media (max-width: 520px) {
   .modal { padding: 1.5rem; }
   .tabs { grid-template-columns: 1fr 1fr 1fr; }

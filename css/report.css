@@ -249,6 +249,15 @@
 .report-page.is-printing * {
   color: #18130d !important;
   background-image: none !important;
+  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+}
+.report-page.is-printing .report-meta,
+.report-page.is-printing .sec-eyebrow,
+.report-page.is-printing .interp-card .code,
+.report-page.is-printing .rec-row .num,
+.report-page.is-printing .overview-strip .label {
+  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+  letter-spacing: .04em;
 }
 .report-page.is-printing .report-section { border-color: #e9e1d4; }
 .report-page.is-printing .report-header,

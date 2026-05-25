@@ -115,6 +115,11 @@
     const prevScrollY = window.scrollY;
     window.scrollTo(0, 0);
 
+    // Wait for all fonts (Poppins, JetBrains Mono) to be fully loaded,
+    // then give the browser one rAF to repaint with is-printing styles applied.
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 350));
+
     try {
       const canvas = await html2canvas(page, {
         scale:           2,
@@ -122,6 +127,10 @@
         useCORS:         true,
         logging:         false,
         windowWidth:     900,   // fixed desktop width — avoids mobile reflow
+        onclone: (_doc, el) => {
+          // Guarantee Poppins is applied in the cloned document
+          el.style.fontFamily = "'Poppins', Arial, Helvetica, sans-serif";
+        },
       });
 
       const { jsPDF } = window.jspdf;
