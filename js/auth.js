@@ -78,14 +78,23 @@
   // Delegated click handler
   // -----------------------------------------------------------------------
   document.addEventListener('click', e => {
+    // Direct anonymous start — no modal required
+    if (e.target.closest('[data-anon-start]')) {
+      e.preventDefault();
+      startAnonymous();
+      return;
+    }
+
     const openBtn = e.target.closest('[data-open-modal]');
     if (openBtn) { e.preventDefault(); openModal(openBtn.dataset.openModal || 'signin'); return; }
 
     const tab = e.target.closest('.tab');
     if (tab && tab.dataset.tab) { switchTab(tab.dataset.tab); return; }
 
-    if (e.target.closest('[data-close-modal]')) { closeModal(); return; }
-    if (e.target.id === 'auth-modal') { closeModal(); return; }
+    // Close only when the × button is clicked, or the backdrop itself is clicked
+    // (not an element inside it — `closest` would bubble up to the backdrop).
+    if (e.target.closest('.modal-close')) { closeModal(); return; }
+    if (e.target.id === 'auth-modal')    { closeModal(); return; }
   });
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
