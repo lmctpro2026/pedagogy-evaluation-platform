@@ -4,10 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Full Report · Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=1.2" />
-<link rel="stylesheet" href="css/report.css?v=1.2" />
+<link rel="stylesheet" href="css/main.css?v=2.0" />
+<link rel="stylesheet" href="css/report.css?v=2.0" />
 </head>
 <body>
+
+<a class="skip-link" href="#report-root">Skip to report</a>
 
 <header class="nav">
   <div class="container nav-inner">
@@ -24,78 +26,88 @@
 
 <div class="report-toolbar">
   <div class="container report-toolbar-inner">
-    <span class="label">Personalised Report · Firmin (2020) Framework</span>
-    <div class="actions">
-      <a class="btn btn-ghost btn-sm" href="results.html">← Scores</a>
-      <button class="btn btn-primary btn-sm" id="a-pdf">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span class="report-toolbar-label">Personalised report · Firmin (2020) framework</span>
+    <div class="report-toolbar-actions">
+      <a class="btn btn-ghost" href="results.html">← Scores</a>
+      <button type="button" class="btn btn-primary" id="a-pdf">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export PDF
       </button>
     </div>
   </div>
 </div>
 
-<main id="report-root">
+<main id="report-root" class="report-main">
   <article class="report-page" id="report-page">
 
     <header class="report-header">
-      <div class="eyebrow">Pedagogy Evaluation Platform</div>
-      <h1>Personalised <span class="italic-accent">Techno-Pedagogical</span> Practice Report</h1>
-      <div class="report-meta">
-        <span><strong>Participant:</strong> <span id="r-name">—</span></span>
-        <span><strong>Completed:</strong> <span id="r-date">—</span></span>
-        <span><strong>Framework:</strong> <span id="r-framework">Firmin (2020)</span></span>
-      </div>
+      <p class="eyebrow">Pedagogy Evaluation Platform</p>
+      <h1>Personalised techno-pedagogical practice report</h1>
+      <dl class="report-meta">
+        <div class="report-meta-item">
+          <dt>Participant</dt>
+          <dd id="r-name">—</dd>
+        </div>
+        <div class="report-meta-item">
+          <dt>Completed</dt>
+          <dd id="r-date">—</dd>
+        </div>
+        <div class="report-meta-item">
+          <dt>Framework</dt>
+          <dd id="r-framework">Firmin (2020)</dd>
+        </div>
+      </dl>
     </header>
 
     <!-- 1. Overview -->
     <section class="report-section">
-      <div class="sec-eyebrow">01 · Overview</div>
+      <p class="sec-eyebrow"><span class="sec-num">01</span> Overview</p>
       <h2>Overall picture of your practice</h2>
-      <p id="ov-para">—</p>
       <div class="overview-strip">
-        <div>
-          <div class="num" id="ov-num">—<span class="of">/100</span></div>
+        <div class="overview-score">
+          <div class="overview-label">Composite score</div>
+          <div class="num" id="ov-num">—<span class="of"> / 100</span></div>
         </div>
-        <div>
+        <div class="overview-descriptor">
+          <div class="overview-label">Composite descriptor</div>
           <div class="descriptor" id="ov-desc">—</div>
-          <div class="label">Composite Descriptor</div>
         </div>
       </div>
+      <p id="ov-para">—</p>
     </section>
 
     <!-- 2. Per-category interpretation -->
     <section class="report-section">
-      <div class="sec-eyebrow">02 · Category interpretation</div>
+      <p class="sec-eyebrow"><span class="sec-num">02</span> Category interpretation</p>
       <h2>Where you sit across the four dimensions</h2>
       <p>The Firmin (2020) framework identifies four interrelated dimensions of techno-pedagogical practice. Each interpretation below is calibrated to your score band — high (70+), mid (45–69) or low (&lt;45) — and is intended as a starting point for reflective practice rather than a fixed judgement.</p>
-      <div class="interp-grid" id="interp-grid"><!-- injected --></div>
+      <div class="interp-list" id="interp-grid"><!-- injected by js/report.js --></div>
     </section>
 
     <!-- 3. Recommendations -->
     <section class="report-section">
-      <div class="sec-eyebrow">03 · Recommendations</div>
+      <p class="sec-eyebrow"><span class="sec-num">03</span> Recommendations</p>
       <h2>Suggested next steps</h2>
       <p>The following recommendations are generated from your score profile. Items targeting categories below 70 are surfaced first; the final two apply to every participant.</p>
-      <div class="recs" id="recs"><!-- injected --></div>
+      <ol class="recs" id="recs"><!-- injected by js/report.js --></ol>
     </section>
 
     <!-- 4. Reference -->
     <section class="report-section">
-      <div class="sec-eyebrow">04 · Reference</div>
+      <p class="sec-eyebrow"><span class="sec-num">04</span> Reference</p>
       <h2>About the framework</h2>
       <p>This report operationalises Dr Selena Firmin's doctoral framework for techno-pedagogical practice. The assessment was developed as a capstone project (ITECH3208) at Federation University Australia. Citation provided in APA 7th format below.</p>
       <div class="reference-card">
-        <strong>APA reference</strong>
-        <span class="apa">Firmin, S. (2020). <em>Unravelling pedagogy: The role of technology in shaping IT academics' perceptions and application of teaching and philosophy</em> [Doctoral dissertation, Monash University]. ProQuest Dissertations &amp; Theses Global.</span>
+        <div class="reference-label">APA reference</div>
+        <p class="apa">Firmin, S. (2020). <em>Unravelling pedagogy: The role of technology in shaping IT academics' perceptions and application of teaching and philosophy</em> [Doctoral dissertation, Monash University]. ProQuest Dissertations &amp; Theses Global.</p>
       </div>
     </section>
 
   </article>
 
-  <div class="container actions-row" style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; padding-block:1rem 4rem;">
+  <div class="report-actions">
     <a class="btn btn-ghost btn-lg" href="results.html">← Back to scores</a>
-    <button class="btn btn-primary btn-lg" id="a-pdf-2">Download PDF Report</button>
+    <button type="button" class="btn btn-primary btn-lg" id="a-pdf-2">Download PDF report</button>
   </div>
 </main>
 
@@ -109,11 +121,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/supabase.js?v=1.2"></script>
-<script src="js/session.js?v=1.2"></script>
-<script src="js/questions.js?v=1.2"></script>
-<script src="js/scoring.js?v=1.2"></script>
-<script src="js/cursor.js?v=1.2"></script>
-<script src="js/report.js?v=1.2"></script>
+<script src="js/supabase.js?v=2.0"></script>
+<script src="js/session.js?v=2.0"></script>
+<script src="js/questions.js?v=2.0"></script>
+<script src="js/scoring.js?v=2.0"></script>
+<script src="js/report.js?v=2.0"></script>
 </body>
 </html>

@@ -4,10 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>My Dashboard · Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=1.2" />
-<link rel="stylesheet" href="css/my-results.css?v=1.2" />
+<link rel="stylesheet" href="css/main.css?v=2.0" />
+<link rel="stylesheet" href="css/my-results.css?v=2.0" />
 </head>
 <body>
+
+<a class="skip-link" href="#mr-root">Skip to content</a>
 
 <header class="nav">
   <div class="container nav-inner">
@@ -18,6 +20,7 @@
     <nav class="nav-links" aria-label="Primary">
       <a href="index.html">Home</a>
       <span class="nav-actions" data-auth="member">
+        <a href="my-results.html" class="nav-results" aria-current="page">Dashboard</a>
         <button type="button" class="nav-text-btn" data-sign-out>Sign out</button>
       </span>
     </nav>
@@ -37,12 +40,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=1.2"></script>
-<script src="js/session.js?v=1.2"></script>
-<script src="js/questions.js?v=1.2"></script>
-<script src="js/scoring.js?v=1.2"></script>
-<script src="js/cursor.js?v=1.2"></script>
-<script src="js/assessment.js?v=1.2"></script>
-<script src="js/my-results.js?v=1.2"></script>
+<script src="js/supabase.js?v=2.0"></script>
+<script src="js/session.js?v=2.0"></script>
+<script src="js/questions.js?v=2.0"></script>
+<script src="js/scoring.js?v=2.0"></script>
+<script src="js/assessment.js?v=2.0"></script>
+<script src="js/my-results.js?v=2.0"></script>
 </body>
 </html>

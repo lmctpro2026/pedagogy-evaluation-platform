@@ -96,9 +96,9 @@
       gate.innerHTML = `
         <div class="gate-card">
           <div class="denied-card">
-            <h2>Access Denied</h2>
+            <h2>Access denied</h2>
             <p>The account <strong>${email}</strong> does not have admin privileges.</p>
-            <button class="btn btn-ghost" id="deny-logout" style="margin:0 auto;">Sign out</button>
+            <button class="btn btn-ghost" id="deny-logout" type="button">Sign out</button>
           </div>
         </div>
       `;
@@ -118,7 +118,7 @@
     if (dash) dash.hidden = false;
 
     const pill = $('#admin-user-pill');
-    if (pill) { pill.textContent = email; pill.style.display = 'block'; }
+    if (pill) { pill.textContent = email; pill.style.display = ''; }
 
     // Logout — reveal and wire
     const logoutBtn = $('#admin-logout');
@@ -341,7 +341,7 @@
       updateLastUpdated();
     } catch (err) {
       console.error('[admin] loadData error:', err);
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="table-empty" style="color:var(--danger);">Error loading data: ${err.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="table-empty is-error">Error loading data: ${err.message}</td></tr>`;
     }
   }
 
@@ -482,10 +482,32 @@
   // Demographic summaries — bar charts over completed sessions whose
   // participant opted in.
   // -------------------------------------------------------------------------
+  // Chart.js can't read CSS variables — these mirror the tokens in css/main.css.
+  const CHART_FONT   = "'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const CHART_COLORS = {
+    text2:   '#3F4957',
+    muted:   '#667080',
+    border:  '#DCE0E6',
+    grid:    '#EEF0F3',
+    accent:  '#1F5A96',
+    tooltip: '#17202C',
+    categories: ['#2F6DB5', '#7A4BA8', '#1E8560', '#C0480F'], // TP, PD, TA, TPP
+  };
+  const CHART_TOOLTIP = {
+    backgroundColor: CHART_COLORS.tooltip,
+    titleColor:      '#FFFFFF',
+    bodyColor:       '#FFFFFF',
+    titleFont:       { family: CHART_FONT, weight: '600' },
+    bodyFont:        { family: CHART_FONT },
+    padding:         10,
+    cornerRadius:    6,
+    displayColors:   false,
+  };
+
   const DEMO_CHARTS = [
-    { canvas: 'demo-chart-age',    column: 'age_group',      optionsKey: 'AGE_GROUPS',      color: 'rgba(42,74,122,0.6)',  border: '#BCD0EF' },
-    { canvas: 'demo-chart-gender', column: 'gender',         optionsKey: 'GENDERS',         color: 'rgba(90,46,110,0.6)',  border: '#DCBDED' },
-    { canvas: 'demo-chart-level',  column: 'academic_level', optionsKey: 'ACADEMIC_LEVELS', color: 'rgba(193,127,58,0.6)', border: '#E8A84E' },
+    { canvas: 'demo-chart-age',    column: 'age_group',      optionsKey: 'AGE_GROUPS',      color: CHART_COLORS.accent },
+    { canvas: 'demo-chart-gender', column: 'gender',         optionsKey: 'GENDERS',         color: CHART_COLORS.accent },
+    { canvas: 'demo-chart-level',  column: 'academic_level', optionsKey: 'ACADEMIC_LEVELS', color: CHART_COLORS.accent },
   ];
 
   function renderDemographics() {
@@ -536,9 +558,9 @@
           datasets: [{
             data,
             backgroundColor: cfg.color,
-            borderColor:     cfg.border,
-            borderWidth: 1,
-            borderRadius: 5,
+            borderWidth: 0,
+            borderRadius: 3,
+            maxBarThickness: 18,
           }],
         },
         options: {
@@ -547,17 +569,19 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} participant${ctx.parsed.x === 1 ? '' : 's'}` } },
+            tooltip: { ...CHART_TOOLTIP, callbacks: { label: ctx => `${ctx.parsed.x} participant${ctx.parsed.x === 1 ? '' : 's'}` } },
           },
           scales: {
             x: {
               beginAtZero: true,
-              ticks: { color: '#6B6459', precision: 0 },
-              grid:  { color: 'rgba(42,37,32,0.5)' },
+              ticks:  { color: CHART_COLORS.muted, precision: 0, font: { family: CHART_FONT, size: 11 } },
+              grid:   { color: CHART_COLORS.grid },
+              border: { color: CHART_COLORS.border },
             },
             y: {
-              ticks: { color: '#F5F0E8', font: { family: 'Poppins', size: 11 } },
-              grid:  { display: false },
+              ticks:  { color: CHART_COLORS.text2, font: { family: CHART_FONT, size: 12 } },
+              grid:   { display: false },
+              border: { color: CHART_COLORS.border },
             },
           },
         },
@@ -585,20 +609,29 @@
         labels: CATEGORY_META.map(c => c.name),
         datasets: [{
           data,
-          backgroundColor: ['rgba(42,74,122,0.6)', 'rgba(90,46,110,0.6)', 'rgba(42,92,68,0.6)', 'rgba(193,127,58,0.6)'],
-          borderColor:     ['#BCD0EF', '#DCBDED', '#B6DCC4', '#E8A84E'],
-          borderWidth: 1,
-          borderRadius: 6,
+          backgroundColor: CHART_COLORS.categories,
+          borderWidth: 0,
+          borderRadius: 3,
+          maxBarThickness: 24,
         }],
       },
       options: {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x}%` } } },
+        plugins: { legend: { display: false }, tooltip: { ...CHART_TOOLTIP, callbacks: { label: ctx => `${ctx.parsed.x}%` } } },
         scales: {
-          x: { min: 0, max: 100, ticks: { color: '#6B6459', callback: v => `${v}%` }, grid: { color: 'rgba(42,37,32,0.5)' } },
-          y: { ticks: { color: '#F5F0E8', font: { family: 'Poppins', size: 12 } }, grid: { display: false } },
+          x: {
+            min: 0, max: 100,
+            ticks:  { color: CHART_COLORS.muted, callback: v => `${v}%`, font: { family: CHART_FONT, size: 11 } },
+            grid:   { color: CHART_COLORS.grid },
+            border: { color: CHART_COLORS.border },
+          },
+          y: {
+            ticks:  { color: CHART_COLORS.text2, font: { family: CHART_FONT, size: 13 } },
+            grid:   { display: false },
+            border: { color: CHART_COLORS.border },
+          },
         },
       },
     });
@@ -638,20 +671,20 @@
       return;
     }
 
-    const score = v => (v == null) ? '<span style="color:var(--muted);">—</span>' : `${v}%`;
+    const score = v => (v == null) ? '<span class="cell-muted">—</span>' : `${v}%`;
     const overallCell = r =>
       r.status === 'completed' ? `${r.overall}%`
-      : r.status === 'in-progress' ? '<span style="color:var(--copper-light);">…</span>'
-      : '<span style="color:var(--muted);">—</span>';
+      : r.status === 'in-progress' ? '<span class="cell-muted">…</span>'
+      : '<span class="cell-muted">—</span>';
 
     tbody.innerHTML = visible.map((r, i) => `
       <tr data-row-id="${r.rowId}">
-        <td class="td-score" style="color:var(--muted);">${String(i + 1).padStart(2, '0')}</td>
+        <td class="td-score td-index">${String(i + 1).padStart(2, '0')}</td>
         <td class="td-name">
           ${r.name}
-          ${r.anon ? '<span class="badge-anon">anon</span>' : ''}
-          <span class="badge-status ${r.status}">${r.status === 'in-progress' ? 'in progress' : r.status === 'not-started' ? 'not started' : 'completed'}</span>
-          ${r.demo?.provided ? '<span class="badge-demo" title="Provided demographic details">demo</span>' : ''}
+          ${r.anon ? '<span class="badge badge-anon">Anonymous</span>' : ''}
+          <span class="badge badge-status ${r.status}">${STATUS_LABELS[r.status]}</span>
+          ${r.demo?.provided ? '<span class="badge badge-demo" title="Provided demographic details">Demographics</span>' : ''}
         </td>
         <td class="td-email">${r.email}</td>
         <td class="td-score">${score(r.tp)}</td>
@@ -663,7 +696,8 @@
         <td class="td-actions">
           ${r.orphan ? '' : `
           <button class="btn-row-delete" type="button" data-action="delete-participant" data-user-id="${r.userId}" data-participant-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Delete this participant and all their data">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
           </button>`}
         </td>
       </tr>
@@ -735,7 +769,7 @@
   // -------------------------------------------------------------------------
   // Participant profile modal — drilldown into one user
   // -------------------------------------------------------------------------
-  const STATUS_LABELS = { 'completed': 'completed', 'in-progress': 'in progress', 'not-started': 'not started' };
+  const STATUS_LABELS = { 'completed': 'Completed', 'in-progress': 'In progress', 'not-started': 'Not started' };
 
   function questionByCode(code) {
     return (window.PED?.QUESTIONS || []).find(q => q.id === code) || null;
@@ -780,11 +814,11 @@
 
     const scores = isCompleted ? `
       <div class="pm-scores">
-        <div><span class="pm-score-label">TP</span> ${(+s.score_tp).toFixed(1)}%</div>
-        <div><span class="pm-score-label">PD</span> ${(+s.score_pd).toFixed(1)}%</div>
-        <div><span class="pm-score-label">TA</span> ${(+s.score_ta).toFixed(1)}%</div>
-        <div><span class="pm-score-label">TPP</span> ${(+s.score_tpp).toFixed(1)}%</div>
-        <div class="pm-score-overall"><span class="pm-score-label">Overall</span> ${overall}%</div>
+        <div class="pm-score cat-TP"><span class="pm-score-label">TP</span> ${(+s.score_tp).toFixed(1)}%</div>
+        <div class="pm-score cat-PD"><span class="pm-score-label">PD</span> ${(+s.score_pd).toFixed(1)}%</div>
+        <div class="pm-score cat-TA"><span class="pm-score-label">TA</span> ${(+s.score_ta).toFixed(1)}%</div>
+        <div class="pm-score cat-TPP"><span class="pm-score-label">TPP</span> ${(+s.score_tpp).toFixed(1)}%</div>
+        <div class="pm-score pm-score-overall"><span class="pm-score-label">Overall</span> ${overall}%</div>
       </div>
     ` : `<div class="pm-incomplete-note">Started but not finished — no scores recorded.</div>`;
 
@@ -792,11 +826,11 @@
       <div class="pm-session-card" data-session-id="${s.id}">
         <div class="pm-session-head">
           <div class="pm-session-meta">
-            <span class="badge-status ${status}">${STATUS_LABELS[status]}</span>
+            <span class="badge badge-status ${status}">${STATUS_LABELS[status]}</span>
             <span class="pm-session-date">Started ${formatDate(s.created_at)}</span>
             ${isCompleted ? `<span class="pm-session-date">· Completed ${formatDate(s.completed_at)}</span>` : ''}
           </div>
-          <button class="btn btn-ghost pm-toggle-responses" type="button" data-session-id="${s.id}">View responses</button>
+          <button class="btn btn-ghost btn-sm pm-toggle-responses" type="button" data-session-id="${s.id}">View responses</button>
         </div>
         ${scores}
         ${isCompleted ? demographicsHtml(s.demo) : ''}
@@ -814,7 +848,7 @@
     $('#pm-title').textContent     = row.name;
     $('#pm-email').textContent     = row.email;
     const statusEl = $('#pm-status');
-    statusEl.className   = `badge-status ${row.status}`;
+    statusEl.className   = `badge badge-status ${row.status}`;
     statusEl.textContent = STATUS_LABELS[row.status];
     $('#pm-anon').hidden     = !row.anon;
     $('#pm-registered').textContent = formatDate(row.registered);
@@ -822,7 +856,7 @@
     const list = $('#pm-sessions');
     list.innerHTML = row.sessions.length
       ? row.sessions.map(sessionCardHtml).join('')
-      : '<p style="color:var(--muted);padding:1rem 0;">No sessions yet — this participant registered but has not started the assessment.</p>';
+      : '<p class="pm-empty">No sessions yet — this participant registered but has not started the assessment.</p>';
 
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -839,7 +873,7 @@
     if (container.dataset.loaded === '1') return;
     const sb = window.PED?.supabase;
     if (!sb) return;
-    container.innerHTML = '<div style="color:var(--muted);padding:.5rem 0;">Loading responses…</div>';
+    container.innerHTML = '<div class="pm-responses-status">Loading responses…</div>';
     try {
       const { data, error } = await sb.from('responses')
         .select('question_id, category, answer_value, answered_at')
@@ -848,7 +882,7 @@
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        container.innerHTML = '<div style="color:var(--muted);padding:.5rem 0;">No responses recorded for this session.</div>';
+        container.innerHTML = '<div class="pm-responses-status">No responses recorded for this session.</div>';
       } else {
         container.innerHTML = '<table class="pm-responses-table"><thead><tr><th>#</th><th>Question</th><th>Category</th><th>Answer</th></tr></thead><tbody>'
           + data.map((r, i) => {
@@ -866,7 +900,7 @@
       container.dataset.loaded = '1';
     } catch (err) {
       console.error('[admin] fetchResponses error:', err);
-      container.innerHTML = `<div style="color:var(--danger);padding:.5rem 0;">Failed to load responses: ${err.message}</div>`;
+      container.innerHTML = `<div class="pm-responses-status is-error">Failed to load responses: ${err.message}</div>`;
     }
   }
 

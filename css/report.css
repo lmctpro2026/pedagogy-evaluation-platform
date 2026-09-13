@@ -1,282 +1,351 @@
-/* ====================================================================
-   Report page — full written report + PDF export styling
-   ==================================================================== */
+/* ==========================================================================
+   Report page
+   Sticky toolbar, white document column, per-category sections, PDF mode.
+   ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Category colour hooks (set on interpretation sections by js/report.js)
+   -------------------------------------------------------------------------- */
+.cat-tp  { --cat: var(--tp);  --cat-soft: var(--tp-soft); }
+.cat-pd  { --cat: var(--pd);  --cat-soft: var(--pd-soft); }
+.cat-ta  { --cat: var(--ta);  --cat-soft: var(--ta-soft); }
+.cat-tpp { --cat: var(--tpp); --cat-soft: var(--tpp-soft); }
+
+/* --------------------------------------------------------------------------
+   Toolbar (sticks below the 61px nav)
+   -------------------------------------------------------------------------- */
 .report-toolbar {
   position: sticky;
-  top: 70px;
-  z-index: 30;
-  background: rgba(13,11,8,0.85);
-  backdrop-filter: blur(14px);
+  top: 61px;
+  z-index: 40;
+  padding-block: .6rem;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: .9rem 0;
 }
 .report-toolbar-inner {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
-.report-toolbar .label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .8rem;
-  text-transform: uppercase;
-  letter-spacing: .18em;
-  color: var(--muted);
+.report-toolbar-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: .875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-.report-toolbar .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.report-toolbar-actions {
+  display: flex;
+  flex: none;
+  gap: .5rem;
+}
 
-/* ---------- The document ---------- */
+/* --------------------------------------------------------------------------
+   Document column
+   -------------------------------------------------------------------------- */
+.report-main { padding-inline: 1rem; }
+
 .report-page {
-  max-width: 900px;
-  margin-inline: auto;
-  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 4vw, 3rem);
+  max-width: 860px;
+  margin: 2rem auto 0;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-.report-header {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 2rem;
-  margin-bottom: 2.5rem;
-}
-.report-header .eyebrow { margin-bottom: 1rem; }
-.report-header h1 {
-  font-size: clamp(2.2rem, 5vw, 4rem);
-  letter-spacing: -0.04em;
-  line-height: 1;
-  margin-bottom: 1rem;
-}
-.report-meta {
-  display: flex; flex-wrap: wrap; gap: 1.75rem;
+.of {
   color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .82rem;
-  letter-spacing: .08em;
+  font-size: .5em;
+  font-weight: 400;
 }
-.report-meta span strong { color: var(--cream); font-weight: 700; }
 
-/* ---------- Sections ---------- */
-.report-section { padding: 2rem 0; border-bottom: 1px solid var(--border); }
-.report-section:last-of-type { border-bottom: 0; }
-.report-section .sec-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .78rem;
-  text-transform: uppercase;
-  letter-spacing: .22em;
-  color: var(--copper-light);
-  margin-bottom: 1rem;
+/* --------------------------------------------------------------------------
+   Title block
+   -------------------------------------------------------------------------- */
+.report-header {
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
 }
+.report-header h1 {
+  max-width: 24ch;
+  margin-top: .4rem;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  line-height: 1.2;
+}
+
+.report-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, auto));
+  justify-content: start;
+  gap: .75rem 2.5rem;
+  margin-top: 1.5rem;
+}
+.report-meta dt {
+  color: var(--muted);
+  font-size: .8125rem;
+  font-weight: 500;
+}
+.report-meta dd {
+  color: var(--text);
+  font-size: .9375rem;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Sections and body copy
+   -------------------------------------------------------------------------- */
+.report-section {
+  padding-block: 2.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.report-section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.sec-eyebrow {
+  color: var(--muted);
+  font-size: .8125rem;
+  font-weight: 600;
+}
+.sec-num {
+  margin-right: .35rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .report-section h2 {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  margin-bottom: 1.25rem;
-  letter-spacing: -0.03em;
+  margin: .3rem 0 1rem;
+  font-size: 1.5rem;
 }
 .report-section p {
-  color: var(--cream);
-  opacity: .85;
+  max-width: 68ch;
+  color: var(--text-2);
   line-height: 1.7;
-  font-size: 1.02rem;
 }
-.report-section p + p { margin-top: 1rem; }
 
-/* ---------- Overview composite ---------- */
+/* --------------------------------------------------------------------------
+   Overview composite
+   -------------------------------------------------------------------------- */
 .overview-strip {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 1.75rem;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-  border: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 2.5rem;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-2);
   border-radius: var(--radius);
-  background: var(--surface);
+}
+.overview-label {
+  margin-bottom: .2rem;
+  color: var(--muted);
+  font-size: .8125rem;
+  font-weight: 500;
 }
 .overview-strip .num {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 900;
-  font-size: clamp(3rem, 6vw, 4.5rem);
-  letter-spacing: -0.04em;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: var(--copper-light);
 }
-.overview-strip .num .of { color: var(--muted); font-size: .5em; }
 .overview-strip .descriptor {
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.overview-strip .descriptor + .label {
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .78rem;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-  margin-top: .3rem;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-/* ---------- Per-category interpretation cards ---------- */
-.interp-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin-top: 1.5rem;
-}
+/* --------------------------------------------------------------------------
+   Per-category interpretation (one sub-section per category)
+   -------------------------------------------------------------------------- */
+.interp-list { margin-top: 1.5rem; }
+
 .interp-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.75rem;
   display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) 72px;
   align-items: start;
+  gap: 1.5rem;
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.interp-heading {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
 }
 .interp-card .code {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  font-size: 1rem;
-  padding: .55rem .75rem;
-  text-align: center;
-  border-radius: 10px;
-  letter-spacing: .12em;
+  flex: none;
+  padding: .1rem .5rem;
+  border-radius: var(--radius-sm);
+  background: var(--cat-soft);
+  color: var(--cat);
+  font-family: var(--font-mono);
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.5;
 }
-.interp-card.cat-tp  .code { background: rgba(42,74,122,0.25);  color: #BCD0EF; }
-.interp-card.cat-pd  .code { background: rgba(90,46,110,0.25);  color: #DCBDED; }
-.interp-card.cat-ta  .code { background: rgba(42,92,68,0.25);   color: #B6DCC4; }
-.interp-card.cat-tpp .code { background: rgba(193,127,58,0.25); color: var(--copper-light); }
+.interp-card h3 {
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
 
-.interp-card .body h3 {
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
-  margin-bottom: .35rem;
-  font-weight: 800;
+.interp-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .75rem;
+  margin: .4rem 0 .6rem;
 }
-.interp-card .body .meta {
-  display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
-  margin-bottom: .8rem;
+.interp-card .pct {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
-.interp-card .body .meta .pct {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .82rem;
-  color: var(--muted);
-  letter-spacing: .1em;
+.interp-card .desc {
+  padding: .05rem .5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: .8125rem;
+  font-weight: 500;
 }
-.interp-card .body .meta .desc {
-  font-size: .82rem;
-  font-weight: 700;
-  color: var(--cream);
-  padding: .2rem .55rem;
-  border-radius: 6px;
-  background: rgba(193,127,58,0.15);
-  border: 1px solid rgba(193,127,58,0.35);
-  letter-spacing: .02em;
-}
-.interp-card .body p {
-  color: var(--cream);
-  opacity: .82;
-  font-size: .96rem;
-  line-height: 1.65;
-}
-.interp-card .scorewheel {
-  width: 64px; height: 64px;
+.interp-card p { font-size: .9375rem; }
+
+.scorewheel {
   position: relative;
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
 }
-.interp-card .scorewheel .val {
-  font-weight: 900;
-  font-size: 1.1rem;
-  letter-spacing: -0.02em;
+.scorewheel svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
-.interp-card .scorewheel svg {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  transform: rotate(-90deg);
+.scorewheel .val {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Recommendations ---------- */
+/* --------------------------------------------------------------------------
+   Recommendations
+   -------------------------------------------------------------------------- */
 .recs {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: .85rem;
   margin-top: 1.25rem;
+  list-style: none;
+  border-top: 1px solid var(--border);
 }
 .rec-row {
   display: grid;
-  grid-template-columns: 36px 1fr;
-  gap: 1rem;
-  align-items: start;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: .75rem;
+  padding-block: .85rem;
+  border-bottom: 1px solid var(--border);
 }
 .rec-row .num {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  color: var(--copper-light);
-  font-size: .9rem;
-  width: 28px; height: 28px;
-  border: 1px solid rgba(193,127,58,0.4);
-  border-radius: 8px;
-  display: grid; place-items: center;
-  background: rgba(193,127,58,0.12);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: .875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
-.rec-row p { font-size: .98rem; line-height: 1.55; color: var(--cream); opacity: .9; }
+.report-section .rec-row p {
+  color: var(--text);
+  line-height: 1.6;
+}
 
-/* ---------- Reference ---------- */
+/* --------------------------------------------------------------------------
+   Reference
+   -------------------------------------------------------------------------- */
 .reference-card {
-  margin-top: 1rem;
-  padding: 1.5rem 1.75rem;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--copper);
-  background: var(--surface);
-  border-radius: var(--radius);
-  font-family: 'Poppins', sans-serif;
-  font-size: .95rem;
-  line-height: 1.65;
-  color: var(--cream);
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
 }
-.reference-card .apa {
-  display: block;
-  margin-top: .35rem;
-  color: var(--muted);
-  font-style: italic;
+.reference-label {
+  margin-bottom: .35rem;
+  color: var(--text);
+  font-size: .875rem;
+  font-weight: 600;
+}
+.report-section .apa {
+  padding-left: 2em;
+  text-indent: -2em; /* APA hanging indent */
+  color: var(--text-2);
+  font-size: .9375rem;
 }
 
-/* ---------- PDF print-friendly mode ---------- */
+/* --------------------------------------------------------------------------
+   Actions below the document
+   -------------------------------------------------------------------------- */
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .75rem;
+  max-width: 860px;
+  margin: 2rem auto 0;
+}
+
+/* --------------------------------------------------------------------------
+   Empty state (rendered by js/report.js when no scores exist)
+   -------------------------------------------------------------------------- */
+.report-empty h1 {
+  margin-top: .4rem;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+}
+.report-empty-text {
+  max-width: 50ch;
+  margin-block: .75rem 1.75rem;
+  color: var(--text-2);
+}
+
+/* --------------------------------------------------------------------------
+   PDF export mode — js/report.js toggles .is-printing while html2canvas runs
+   -------------------------------------------------------------------------- */
 .report-page.is-printing {
-  background: #ffffff;
-  color: #18130d;
-  padding: 32px;
   max-width: 760px;
-}
-.report-page.is-printing,
-.report-page.is-printing * {
-  color: #18130d !important;
-  background-image: none !important;
-  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
-}
-.report-page.is-printing .report-meta,
-.report-page.is-printing .sec-eyebrow,
-.report-page.is-printing .interp-card .code,
-.report-page.is-printing .rec-row .num,
-.report-page.is-printing .overview-strip .label {
-  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
-  letter-spacing: .04em;
-}
-.report-page.is-printing .report-section { border-color: #e9e1d4; }
-.report-page.is-printing .report-header,
-.report-page.is-printing .overview-strip,
-.report-page.is-printing .interp-card,
-.report-page.is-printing .rec-row,
-.report-page.is-printing .reference-card {
-  background: #fffbf3;
-  border-color: #e9e1d4;
-}
-.report-page.is-printing .overview-strip .num,
-.report-page.is-printing .sec-eyebrow,
-.report-page.is-printing .italic-accent {
-  color: #96611E !important;
+  padding: 32px;
+  background: #FFFFFF;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* ---------- Mobile ---------- */
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
-  .interp-card { grid-template-columns: 60px 1fr; }
-  .interp-card .scorewheel { display: none; }
-  .overview-strip { grid-template-columns: 1fr; gap: 1rem; }
+  .report-page { margin-top: 1rem; }
+  .report-meta { grid-template-columns: 1fr; }
+  .interp-card { grid-template-columns: minmax(0, 1fr) 56px; gap: 1rem; }
+  .scorewheel { width: 56px; height: 56px; }
+  .scorewheel .val { font-size: .9rem; }
+  .report-actions .btn { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .report-toolbar-label { display: none; }
+  .report-toolbar-inner { justify-content: flex-end; }
 }
