@@ -30,21 +30,27 @@
 
   // Update session with final scores + batch-insert all responses.
   // Then fire the email edge function (non-blocking).
+  //
+  // Returns true only when the scores AND the responses actually reached the
+  // server, so the caller can tell the participant the truth. supabase-js
+  // reports failures on `error` rather than throwing, so both must be checked —
+  // an RLS rejection would otherwise pass silently.
   async function completeSession(sessionId, responseList, scores) {
     const sb = window.PED.supabase;
-    if (!sb) return;
-    try {
-      const completedAt = new Date().toISOString();
-      if (sessionId) {
-        await sb.from('sessions').update({
+    let saved = false;
+
+    if (sb && sessionId) {
+      try {
+        const { error: sessionError } = await sb.from('sessions').update({
           score_tp:     scores.TP,
           score_pd:     scores.PD,
           score_ta:     scores.TA,
           score_tpp:    scores.TPP,
-          completed_at: completedAt,
+          completed_at: new Date().toISOString(),
         }).eq('id', sessionId);
+        if (sessionError) throw sessionError;
 
-        await sb.from('responses').insert(
+        const { error: responsesError } = await sb.from('responses').insert(
           responseList.map(r => ({
             session_id:   sessionId,
             question_id:  r.question_id,
@@ -52,12 +58,48 @@
             answer_value: r.answer_value,
           }))
         );
-      }
+        // 23505 = unique_violation → this session's answers are already stored.
+        if (responsesError && responsesError.code !== '23505') throw responsesError;
 
-      // Fire-and-forget — email must not block the redirect
-      sendEmailNotifications(sessionId, scores).catch(() => {});
+        saved = true;
+      } catch (e) {
+        console.warn('[assessment] completeSession failed (non-fatal):', e.message || e);
+      }
+    }
+
+    // Fire-and-forget — the email carries the scores we already hold, so it is
+    // still worth sending even if the database write did not land.
+    sendEmailNotifications(sessionId, scores).catch(() => {});
+    return saved;
+  }
+
+  // Persist the optional demographics for a completed session.
+  // `data.provided === false` records a participant who was asked and declined.
+  // The row is write-once (unique session_id, no UPDATE policy), so a repeat
+  // submit — e.g. the browser back button — is treated as already-recorded
+  // rather than as an error.
+  // Returns true when the answer is safely on the server, false otherwise.
+  async function saveDemographics(sessionId, data) {
+    const sb = window.PED.supabase;
+    if (!sb || !sessionId) return false;
+    try {
+      const { error } = await sb.from('demographics').insert([{
+        session_id:     sessionId,
+        provided:       data.provided !== false,
+        age_group:      data.ageGroup      || null,
+        gender:         data.gender        || null,
+        gender_other:   data.genderOther   || null,
+        academic_level: data.academicLevel || null,
+      }]);
+      // 23505 = unique_violation → this session already has a row.
+      if (error && error.code !== '23505') {
+        console.warn('[assessment] saveDemographics:', error.message);
+        return false;
+      }
+      return true;
     } catch (e) {
-      console.warn('[assessment] completeSession error (non-fatal):', e);
+      console.warn('[assessment] saveDemographics error (non-fatal):', e);
+      return false;
     }
   }
 
@@ -93,6 +135,10 @@
           'apikey':        key,
         },
         body: JSON.stringify({ sessionId, scores, participantEmail, participantName }),
+        // The participant may navigate to the demographics or results page
+        // straight after completing — keepalive lets this small request finish
+        // instead of being cancelled with the page.
+        keepalive: true,
       });
     } catch (e) {
       console.warn('[assessment] sendEmailNotifications failed (non-fatal):', e);
@@ -100,5 +146,5 @@
   }
 
   window.PED = window.PED || {};
-  window.PED.assessment = { createSession, completeSession, sendEmailNotifications };
+  window.PED.assessment = { createSession, completeSession, saveDemographics, sendEmailNotifications };
 })();

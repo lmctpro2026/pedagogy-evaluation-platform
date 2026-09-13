@@ -16,6 +16,8 @@
   let sortCol   = 'date';
   let sortDir   = 'desc';
   let chartInst = null;
+  let demoCharts = {};             // age / gender / level bar charts
+  let demographicsAvailable = true; // false until sprint3-demographics.sql is applied
 
   // -------------------------------------------------------------------------
   // Boot
@@ -159,11 +161,9 @@
     try {
       const { error } = await sb.from('users').delete().eq('id', userId);
       if (error) throw error;
-      allRows = allRows.filter(r => r.userId !== userId);
-      renderStats();
-      renderChart();
-      renderTable();
-      updateLastUpdated();
+      // Re-read rather than patching local state — deleting a user cascades to
+      // their sessions, responses and demographics, which every panel counts.
+      await loadData(sb);
     } catch (err) {
       console.error('[admin] delete error:', err);
       window.alert(`Failed to delete participant: ${err.message}`);
@@ -208,78 +208,135 @@
 
   // -------------------------------------------------------------------------
   // Load data from Supabase — one row per participant, with their most recent
-  // session folded in. Two parallel queries (users + sessions) merged on
-  // user_id OR participant_email so historically-orphaned sessions still
-  // attach to the right participant.
+  // session folded in. Parallel queries (users + sessions + demographics)
+  // merged on user_id OR participant_email so historically-orphaned sessions
+  // still attach to the right participant. Sessions that match no user row at
+  // all become their own "unattached" participant rather than disappearing
+  // from the counts.
   // -------------------------------------------------------------------------
   let allSessionsCache = [];   // full sessions list, used by the profile modal
+
+  // Build the per-participant row from a set of sessions, newest first.
+  function buildRow(base, sessions) {
+    const sorted = sessions.slice().sort((a, b) => {
+      const ad = new Date(a.completed_at || a.created_at).getTime();
+      const bd = new Date(b.completed_at || b.created_at).getTime();
+      return bd - ad;
+    });
+
+    const completed = sorted.find(s => s.completed_at);
+    const latest    = completed || sorted[0] || null;
+    const isDone    = !!(latest && latest.completed_at);
+    const status    = !latest ? 'not-started' : latest.completed_at ? 'completed' : 'in-progress';
+
+    const num = v => +(+v || 0).toFixed(1);
+
+    return {
+      ...base,
+      sessionId:    latest?.id || null,
+      status,
+      tp:           isDone ? num(latest.score_tp)  : null,
+      pd:           isDone ? num(latest.score_pd)  : null,
+      ta:           isDone ? num(latest.score_ta)  : null,
+      tpp:          isDone ? num(latest.score_tpp) : null,
+      overall:      isDone
+        ? +(((+latest.score_tp || 0) + (+latest.score_pd || 0) + (+latest.score_ta || 0) + (+latest.score_tpp || 0)) / 4).toFixed(1)
+        : null,
+      date:         latest?.completed_at || latest?.created_at || base.registered,
+      demo:         latest?.demo || null,
+      sessionCount: sorted.length,
+      sessions:     sorted,
+    };
+  }
 
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
 
     try {
-      const [usersRes, sessionsRes] = await Promise.all([
+      const [usersRes, sessionsRes, demoRes] = await Promise.all([
         sb.from('users')
           .select('id, email, full_name, is_anonymous, created_at')
           .order('created_at', { ascending: false }),
         sb.from('sessions')
           .select('id, user_id, participant_email, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at')
           .order('created_at', { ascending: false }),
+        // Demographics is Sprint 3 — the dashboard must still load if the
+        // migration has not been applied yet.
+        sb.from('demographics')
+          .select('session_id, provided, age_group, gender, gender_other, academic_level, created_at'),
       ]);
 
       if (usersRes.error)    throw usersRes.error;
       if (sessionsRes.error) throw sessionsRes.error;
 
-      allSessionsCache = sessionsRes.data || [];
-      const users      = usersRes.data || [];
+      demographicsAvailable = !demoRes.error;
+      if (demoRes.error) console.warn('[admin] demographics unavailable:', demoRes.error.message);
 
-      allRows = users
+      const demoBySession = new Map(
+        (demoRes.data || []).map(d => [d.session_id, d])
+      );
+
+      // Attach each session's demographics up front so every consumer sees it.
+      allSessionsCache = (sessionsRes.data || []).map(s => ({
+        ...s,
+        demo: demoBySession.get(s.id) || null,
+      }));
+
+      const users = (usersRes.data || [])
         // Hide admin accounts from the participant list — they're not subjects
-        .filter(u => !ADMIN_EMAILS.includes((u.email || '').toLowerCase()))
-        .map(u => {
-          // Match by user_id OR by participant_email (case-insensitive)
-          const userEmailLower = (u.email || '').toLowerCase();
-          const sessions = allSessionsCache.filter(s =>
-            s.user_id === u.id ||
-            (userEmailLower && s.participant_email && s.participant_email.toLowerCase() === userEmailLower)
-          ).slice().sort((a, b) => {
-            const ad = new Date(a.completed_at || a.created_at).getTime();
-            const bd = new Date(b.completed_at || b.created_at).getTime();
-            return bd - ad;
-          });
+        .filter(u => !ADMIN_EMAILS.includes((u.email || '').toLowerCase()));
 
-          const completed = sessions.find(s => s.completed_at);
-          const latest    = completed || sessions[0] || null;
-          const status    = !latest ? 'not-started'
-                          : latest.completed_at ? 'completed'
-                          : 'in-progress';
+      const claimed = new Set();
 
-          const overall = (latest && latest.completed_at)
-            ? +(((+latest.score_tp || 0) + (+latest.score_pd || 0) + (+latest.score_ta || 0) + (+latest.score_tpp || 0)) / 4).toFixed(1)
-            : null;
+      const userRows = users.map(u => {
+        // Match by user_id OR by participant_email (case-insensitive)
+        const userEmailLower = (u.email || '').toLowerCase();
+        const sessions = allSessionsCache.filter(s =>
+          s.user_id === u.id ||
+          (userEmailLower && s.participant_email && s.participant_email.toLowerCase() === userEmailLower)
+        );
+        sessions.forEach(s => claimed.add(s.id));
 
-          return {
-            userId:       u.id,
-            sessionId:    latest?.id || null,
-            name:         u.full_name || (u.is_anonymous ? 'Anonymous' : '—'),
-            email:        u.email || latest?.participant_email || '—',
-            anon:         u.is_anonymous ?? false,
-            registered:   u.created_at,
-            status,
-            tp:           (latest && latest.completed_at) ? +(+latest.score_tp  ?? 0).toFixed(1) : null,
-            pd:           (latest && latest.completed_at) ? +(+latest.score_pd  ?? 0).toFixed(1) : null,
-            ta:           (latest && latest.completed_at) ? +(+latest.score_ta  ?? 0).toFixed(1) : null,
-            tpp:          (latest && latest.completed_at) ? +(+latest.score_tpp ?? 0).toFixed(1) : null,
-            overall,
-            date:         latest?.completed_at || latest?.created_at || u.created_at,
-            sessionCount: sessions.length,
-            sessions,
-          };
-        });
+        return buildRow({
+          rowId:      u.id,
+          userId:     u.id,
+          name:       u.full_name || (u.is_anonymous ? 'Anonymous' : '—'),
+          email:      u.email || '—',
+          anon:       u.is_anonymous ?? false,
+          registered: u.created_at,
+          orphan:     false,
+        }, sessions);
+      });
+
+      // Sessions belonging to no visible user row (e.g. the participant's auth
+      // account was removed). They are still real assessments, so they count as
+      // participants — one row per unattached session.
+      const orphanRows = allSessionsCache
+        .filter(s => !claimed.has(s.id))
+        .map(s => buildRow({
+          rowId:      `session:${s.id}`,
+          userId:     null,
+          name:       'Unattached session',
+          email:      s.participant_email || '—',
+          anon:       true,
+          registered: s.created_at,
+          orphan:     true,
+        }, [s]));
+
+      allRows = [...userRows, ...orphanRows];
+
+      // Fill in the email column from a session when the user row has none.
+      allRows.forEach(r => {
+        if (r.email === '—') {
+          r.email = r.sessions.find(s => s.participant_email)?.participant_email || '—';
+        }
+      });
 
       renderStats();
       renderChart();
+      renderCategorySummary();
+      renderDemographics();
       renderTable();
       updateLastUpdated();
     } catch (err) {
@@ -290,55 +347,229 @@
 
   // -------------------------------------------------------------------------
   // Stats cards
+  //
+  //   participants — every non-admin person known to the platform
+  //   started      — participants with at least one session row
+  //   completed    — participants with at least one finished session
+  //   accounts     — participants who registered (not anonymous sign-ins)
   // -------------------------------------------------------------------------
   function renderStats() {
-    const totalUsers     = allRows.length;
-    const completed      = allRows.filter(r => r.status === 'completed');
-    const inProgress     = allRows.filter(r => r.status === 'in-progress').length;
-    const registered     = allRows.filter(r => !r.anon).length;
-    const anonymous      = allRows.filter(r => r.anon).length;
-    const avgScore       = completed.length
+    const participants = allRows.length;
+    const started      = allRows.filter(r => r.sessionCount > 0).length;
+    const completed    = allRows.filter(r => r.status === 'completed');
+    const inProgress   = allRows.filter(r => r.status === 'in-progress').length;
+    const accounts     = allRows.filter(r => !r.anon).length;
+    const anonymous    = participants - accounts;
+
+    const avgScore = completed.length
       ? (completed.reduce((a, r) => a + r.overall, 0) / completed.length).toFixed(1)
       : null;
-    const todayCompleted = completed.filter(r => {
-      const d = new Date(r.date);
-      const now = new Date();
-      return d.toDateString() === now.toDateString();
-    }).length;
 
-    const el  = id => document.getElementById(id);
-    const set = (id, v) => { const e = el(id); if (e) e.textContent = v; };
+    const today = new Date().toDateString();
+    const todayCompleted = completed.filter(r => new Date(r.date).toDateString() === today).length;
 
-    // Total card: "users · completed" — still surfaces completion count
-    set('stat-total',    totalUsers);
-    const totalLabel = el('stat-total')?.parentElement?.querySelector('.stat-label');
-    if (totalLabel) totalLabel.textContent = 'Total Users';
-    const totalSub = el('stat-total')?.parentElement?.querySelector('.stat-sub');
-    if (totalSub)   totalSub.textContent   = `${completed.length} completed · ${inProgress} in progress`;
+    // Demographics is measured per completed session, not per participant.
+    const asked    = allSessionsCache.filter(s => s.completed_at && s.demo);
+    const provided = asked.filter(s => s.demo.provided).length;
+    const declined = asked.length - provided;
 
-    set('stat-avg',      avgScore != null ? `${avgScore}%` : '—');
-    set('stat-reg',      totalUsers ? `${Math.round((registered / totalUsers) * 100)}%` : '—');
-    set('stat-today',    todayCompleted);
-    set('stat-reg-sub',  `${registered} registered · ${anonymous} anonymous`);
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const pct = (n, d) => d ? `${Math.round((n / d) * 100)}%` : '—';
+
+    set('stat-participants',     participants);
+    set('stat-participants-sub', `${accounts} registered · ${anonymous} anonymous`);
+
+    set('stat-started',          started);
+    set('stat-started-sub',      `${pct(started, participants)} of participants`);
+
+    set('stat-completed',        completed.length);
+    set('stat-completed-sub',    `${todayCompleted} today`);
+
+    set('stat-accounts',         accounts);
+    set('stat-accounts-sub',     `${pct(accounts, participants)} of participants`);
+
+    set('stat-rate',             pct(completed.length, started));
+    set('stat-rate-sub',         `${completed.length} of ${started} who started`);
+
+    set('stat-inprogress',       inProgress);
+
+    set('stat-avg',              avgScore != null ? `${avgScore}%` : '—');
+    set('stat-avg-sub',          `across ${completed.length} completed`);
+
+    set('stat-demographics',     demographicsAvailable ? provided : '—');
+    set('stat-demographics-sub', demographicsAvailable
+      ? `${declined} declined · ${pct(provided, asked.length)} opt-in`
+      : 'migration not applied');
   }
 
   // -------------------------------------------------------------------------
-  // Category averages chart — only across COMPLETED sessions
+  // TP / PD / TA / TPP numeric summary — computed across completed sessions
+  // (every completed session, not just each participant's latest).
+  // -------------------------------------------------------------------------
+  const CATEGORY_META = [
+    { key: 'score_tp',  code: 'TP',  name: 'Teaching Practice' },
+    { key: 'score_pd',  code: 'PD',  name: 'Pedagogical Development' },
+    { key: 'score_ta',  code: 'TA',  name: 'Technology Adoption' },
+    { key: 'score_tpp', code: 'TPP', name: 'Techno-Pedagogical Practice' },
+  ];
+
+  function stats(values) {
+    if (!values.length) return null;
+    const sorted = values.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return {
+      n:      sorted.length,
+      mean:   +(sorted.reduce((a, b) => a + b, 0) / sorted.length).toFixed(1),
+      median: +(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2).toFixed(1),
+      min:    +sorted[0].toFixed(1),
+      max:    +sorted[sorted.length - 1].toFixed(1),
+    };
+  }
+
+  function completedSessions() {
+    return allSessionsCache.filter(s => s.completed_at);
+  }
+
+  function renderCategorySummary() {
+    const body = $('#category-summary-body');
+    if (!body) return;
+
+    const done = completedSessions();
+    if (!done.length) {
+      body.innerHTML = '<tr><td colspan="6" class="table-empty">No completed assessments yet.</td></tr>';
+      return;
+    }
+
+    const rows = CATEGORY_META.map(c => {
+      const s = stats(done.map(x => +x[c.key]).filter(Number.isFinite));
+      return { c, s };
+    });
+
+    const overall = stats(done.map(x =>
+      (CATEGORY_META.reduce((a, c) => a + (+x[c.key] || 0), 0)) / CATEGORY_META.length
+    ));
+
+    const cell = v => v == null ? '—' : `${v}%`;
+    const line = (label, code, s, cls = '') => `
+      <tr class="${cls}">
+        <td class="sum-name">${code ? `<span class="cat-pill cat-${code}">${code}</span>` : ''} ${label}</td>
+        <td>${s ? s.n : 0}</td>
+        <td class="sum-mean">${cell(s?.mean)}</td>
+        <td>${cell(s?.median)}</td>
+        <td>${cell(s?.min)}</td>
+        <td>${cell(s?.max)}</td>
+      </tr>`;
+
+    body.innerHTML =
+      rows.map(({ c, s }) => line(c.name, c.code, s)).join('') +
+      line('Overall composite', null, overall, 'sum-total');
+  }
+
+  // -------------------------------------------------------------------------
+  // Demographic summaries — bar charts over completed sessions whose
+  // participant opted in.
+  // -------------------------------------------------------------------------
+  const DEMO_CHARTS = [
+    { canvas: 'demo-chart-age',    column: 'age_group',      optionsKey: 'AGE_GROUPS',      color: 'rgba(42,74,122,0.6)',  border: '#BCD0EF' },
+    { canvas: 'demo-chart-gender', column: 'gender',         optionsKey: 'GENDERS',         color: 'rgba(90,46,110,0.6)',  border: '#DCBDED' },
+    { canvas: 'demo-chart-level',  column: 'academic_level', optionsKey: 'ACADEMIC_LEVELS', color: 'rgba(193,127,58,0.6)', border: '#E8A84E' },
+  ];
+
+  function renderDemographics() {
+    const section = $('#demographics-section');
+    const empty   = $('#demographics-empty');
+    const note    = $('#demographics-note');
+    const grid    = section?.querySelector('.demo-charts');
+    if (!section || !window.Chart) return;
+
+    const showMessage = msg => {
+      if (grid)  grid.hidden  = true;
+      if (empty) { empty.hidden = false; empty.textContent = msg; }
+      Object.values(demoCharts).forEach(c => c.destroy());
+      demoCharts = {};
+    };
+
+    if (!demographicsAvailable) {
+      if (note) note.textContent = '';
+      return showMessage('Demographics are not available yet — run sprint3-demographics.sql in the Supabase SQL Editor to create the table.');
+    }
+
+    const provided = completedSessions().filter(s => s.demo && s.demo.provided);
+    if (note) note.textContent = `${provided.length} participant${provided.length === 1 ? '' : 's'} provided details`;
+
+    if (!provided.length) {
+      return showMessage('No demographic details collected yet. Participants are asked after completing the survey.');
+    }
+
+    if (grid)  grid.hidden  = false;
+    if (empty) empty.hidden = true;
+
+    DEMO_CHARTS.forEach(cfg => {
+      const canvas = document.getElementById(cfg.canvas);
+      if (!canvas) return;
+
+      const options = window.PED.DEMOGRAPHICS[cfg.optionsKey];
+      const counts  = options.map(o => provided.filter(s => s.demo[cfg.column] === o.value).length);
+
+      // Drop always-empty buckets so small samples stay readable.
+      const labels = [], data = [];
+      options.forEach((o, i) => { if (counts[i] > 0) { labels.push(o.label); data.push(counts[i]); } });
+
+      if (demoCharts[cfg.canvas]) demoCharts[cfg.canvas].destroy();
+      demoCharts[cfg.canvas] = new window.Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: cfg.color,
+            borderColor:     cfg.border,
+            borderWidth: 1,
+            borderRadius: 5,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} participant${ctx.parsed.x === 1 ? '' : 's'}` } },
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { color: '#6B6459', precision: 0 },
+              grid:  { color: 'rgba(42,37,32,0.5)' },
+            },
+            y: {
+              ticks: { color: '#F5F0E8', font: { family: 'Poppins', size: 11 } },
+              grid:  { display: false },
+            },
+          },
+        },
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Category averages chart — across every COMPLETED session, so it always
+  // matches the numeric summary table beneath it.
   // -------------------------------------------------------------------------
   function renderChart() {
     const canvas = document.getElementById('admin-chart');
     if (!canvas || !window.Chart) return;
 
-    const completed = allRows.filter(r => r.status === 'completed');
-    const n = completed.length;
-    const avg = key => n ? +(completed.reduce((a, r) => a + (r[key] || 0), 0) / n).toFixed(1) : 0;
-    const data = [avg('tp'), avg('pd'), avg('ta'), avg('tpp')];
+    const done = completedSessions();
+    const n = done.length;
+    const avg = key => n ? +(done.reduce((a, s) => a + (+s[key] || 0), 0) / n).toFixed(1) : 0;
+    const data = CATEGORY_META.map(c => avg(c.key));
 
     if (chartInst) chartInst.destroy();
     chartInst = new window.Chart(canvas, {
       type: 'bar',
       data: {
-        labels: ['Teaching Practice', 'Pedagogical Development', 'Technology Adoption', 'Techno-Pedagogical Practice'],
+        labels: CATEGORY_META.map(c => c.name),
         datasets: [{
           data,
           backgroundColor: ['rgba(42,74,122,0.6)', 'rgba(90,46,110,0.6)', 'rgba(42,92,68,0.6)', 'rgba(193,127,58,0.6)'],
@@ -401,12 +632,13 @@
       : '<span style="color:var(--muted);">—</span>';
 
     tbody.innerHTML = visible.map((r, i) => `
-      <tr data-user-id="${r.userId}">
+      <tr data-row-id="${r.rowId}">
         <td class="td-score" style="color:var(--muted);">${String(i + 1).padStart(2, '0')}</td>
         <td class="td-name">
           ${r.name}
           ${r.anon ? '<span class="badge-anon">anon</span>' : ''}
           <span class="badge-status ${r.status}">${r.status === 'in-progress' ? 'in progress' : r.status === 'not-started' ? 'not started' : 'completed'}</span>
+          ${r.demo?.provided ? '<span class="badge-demo" title="Provided demographic details">demo</span>' : ''}
         </td>
         <td class="td-email">${r.email}</td>
         <td class="td-score">${score(r.tp)}</td>
@@ -416,9 +648,10 @@
         <td class="td-overall">${overallCell(r)}</td>
         <td class="td-date">${formatDate(r.date)}</td>
         <td class="td-actions">
+          ${r.orphan ? '' : `
           <button class="btn-row-delete" type="button" data-action="delete-participant" data-user-id="${r.userId}" data-participant-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Delete this participant and all their data">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          </button>`}
         </td>
       </tr>
     `).join('');
@@ -434,8 +667,8 @@
           deleteParticipant(delBtn.dataset.userId, delBtn.dataset.participantName);
           return;
         }
-        const row = e.target.closest('tr[data-user-id]');
-        if (row) openParticipantModal(row.dataset.userId);
+        const row = e.target.closest('tr[data-row-id]');
+        if (row) openParticipantModal(row.dataset.rowId);
       });
       tbody._clickWired = true;
     }
@@ -461,11 +694,19 @@
   // CSV export
   // -------------------------------------------------------------------------
   function exportCSV() {
-    const headers = ['#', 'Name', 'Email', 'Anonymous', 'Status', 'TP', 'PD', 'TA', 'TPP', 'Overall', 'Last Activity'];
-    const cell    = v => v == null ? '' : v;
-    const rows    = allRows.map((r, i) => [
+    const headers = [
+      '#', 'Name', 'Email', 'Anonymous', 'Status', 'TP', 'PD', 'TA', 'TPP', 'Overall',
+      'Age Group', 'Gender', 'Gender (specified)', 'Academic Level', 'Last Activity',
+    ];
+    const cell = v => v == null ? '' : v;
+    const D    = window.PED.DEMOGRAPHICS;
+    const rows = allRows.map((r, i) => [
       i + 1, r.name, r.email, r.anon ? 'Yes' : 'No', r.status,
       cell(r.tp), cell(r.pd), cell(r.ta), cell(r.tpp), cell(r.overall),
+      demoCell(r.demo, D.AGE_GROUPS,      'age_group'),
+      demoCell(r.demo, D.GENDERS,         'gender'),
+      r.demo?.provided ? cell(r.demo.gender_other) : '',
+      demoCell(r.demo, D.ACADEMIC_LEVELS, 'academic_level'),
       r.date ? new Date(r.date).toLocaleString() : '',
     ]);
     const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -488,6 +729,32 @@
   }
   function likertLabel(v) {
     return ((window.PED?.LIKERT || []).find(l => l.value === v) || {}).label || String(v);
+  }
+
+  // One demographic value, resolved to its human label. Blank when the
+  // participant declined or was never asked.
+  function demoCell(demo, options, column) {
+    if (!demo || !demo.provided || !demo[column]) return '';
+    return window.PED.demographicLabel(options, demo[column]);
+  }
+
+  function demographicsHtml(demo) {
+    if (!demographicsAvailable) return '';
+    if (!demo) return '<div class="pm-demo none">Demographics: not asked</div>';
+    if (!demo.provided) return '<div class="pm-demo none">Demographics: declined</div>';
+
+    const D = window.PED.DEMOGRAPHICS;
+    const gender = demo.gender === 'other' && demo.gender_other
+      ? `Other — ${demo.gender_other}`
+      : demoCell(demo, D.GENDERS, 'gender') || '—';
+
+    return `
+      <div class="pm-demo">
+        <span class="pm-demo-title">Demographics</span>
+        <span><span class="pm-score-label">Age</span> ${demoCell(demo, D.AGE_GROUPS, 'age_group') || '—'}</span>
+        <span><span class="pm-score-label">Gender</span> ${gender}</span>
+        <span><span class="pm-score-label">Academic</span> ${demoCell(demo, D.ACADEMIC_LEVELS, 'academic_level') || '—'}</span>
+      </div>`;
   }
 
   function sessionCardHtml(s) {
@@ -519,13 +786,14 @@
           <button class="btn btn-ghost pm-toggle-responses" type="button" data-session-id="${s.id}">View responses</button>
         </div>
         ${scores}
+        ${isCompleted ? demographicsHtml(s.demo) : ''}
         <div class="pm-responses" data-loaded="0" hidden></div>
       </div>
     `;
   }
 
-  async function openParticipantModal(userId) {
-    const row = allRows.find(r => r.userId === userId);
+  async function openParticipantModal(rowId) {
+    const row = allRows.find(r => r.rowId === rowId);
     if (!row) return;
     const modal = $('#participant-modal');
     if (!modal) return;

@@ -241,6 +241,8 @@ body {
   overflow: hidden;
   margin-bottom: 2rem;
 }
+/* Band headings sit tight above their grid. */
+.section-title + .stats-grid { margin-top: -.4rem; }
 .stat-card {
   background: var(--surface);
   padding: 1.5rem 1.75rem;
@@ -286,6 +288,113 @@ body {
   margin-bottom: 1.25rem;
 }
 .chart-wrap { height: 140px; position: relative; }
+.section-note {
+  float: right;
+  text-transform: none;
+  letter-spacing: .04em;
+  color: var(--copper-light);
+}
+
+/* ---- Category numeric summary ---- */
+.summary-table-wrap { margin-top: 1.5rem; overflow-x: auto; }
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  min-width: 560px;
+}
+.summary-table th {
+  text-align: right;
+  padding: .5rem .75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+.summary-table th:first-child { text-align: left; }
+.summary-table td {
+  text-align: right;
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cream);
+}
+.summary-table tr:last-child td { border-bottom: none; }
+.summary-table .sum-name {
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+}
+.summary-table .sum-mean { color: var(--copper-light); font-weight: 700; }
+.summary-table .sum-total td { background: rgba(193,127,58,0.06); }
+.summary-table .sum-total .sum-name { font-weight: 700; }
+
+/* ---- Demographic summary charts ---- */
+.demo-charts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.demo-chart-card { background: var(--surface); padding: 1.1rem 1.25rem; }
+.demo-chart-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--muted);
+  margin-bottom: .9rem;
+}
+.demo-chart-wrap { height: 175px; position: relative; }
+.demo-empty {
+  padding: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: .88rem;
+  text-align: center;
+}
+
+/* ---- "provided demographics" row badge ---- */
+.badge-demo {
+  display: inline-block;
+  margin-left: .4rem;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #B6DCC4;
+  background: rgba(42,92,68,0.2);
+  border: 1px solid rgba(182,220,196,0.3);
+}
+
+/* ---- Demographics inside the participant modal ---- */
+.pm-demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1.25rem;
+  align-items: baseline;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--border);
+  font-size: .84rem;
+}
+.pm-demo.none { color: var(--muted); font-style: italic; }
+.pm-demo-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .64rem;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--muted);
+}
 
 /* ---- Table section ---- */
 .table-section {
@@ -668,6 +777,8 @@ table.admin-table {
 @media (max-width: 900px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-wrap { padding: 1.5rem 1rem; }
+  .demo-charts { grid-template-columns: 1fr; }
+  .section-note { float: none; display: block; margin-top: .3rem; }
 }
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: 1fr 1fr; }

@@ -1,0 +1,161 @@
+/* ====================================================================
+   Demographics page — optional details captured after the survey
+   ==================================================================== */
+
+.demo-shell {
+  min-height: calc(100vh - 70px);
+  padding-block: clamp(2.5rem, 6vw, 5rem) 4rem;
+}
+
+.demo-head { max-width: 760px; margin: 0 auto 2.5rem; text-align: center; }
+.demo-head h1 {
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  margin: .7rem 0 1rem;
+}
+.demo-head p { color: var(--muted); font-size: 1.02rem; max-width: 62ch; margin-inline: auto; }
+.demo-head em { color: var(--copper-light); font-style: italic; }
+
+/* ---------- Card ---------- */
+.demo-card {
+  max-width: 860px;
+  margin-inline: auto;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,0.7);
+}
+
+.demo-field { border: none; margin-bottom: 2.25rem; }
+.demo-field:last-of-type { margin-bottom: 1.75rem; }
+.demo-field legend {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .74rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .9rem;
+}
+.demo-field.invalid legend { color: #F0A8A8; }
+
+/* ---------- Option buttons ---------- */
+.opt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .55rem;
+}
+.opt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: .85rem 2.5rem .85rem 1rem;
+  text-align: left;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: .92rem;
+  cursor: pointer;
+  transition: border-color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease);
+}
+.opt:hover { border-color: var(--copper-dark); background: rgba(193,127,58,0.06); }
+.opt:focus-visible { outline: 2px solid var(--copper-light); outline-offset: 2px; }
+.opt.selected {
+  background: var(--copper);
+  border-color: var(--copper-light);
+  color: #1A1108;
+}
+/* Radio affordance — these are radiogroups, so show the selection state
+   explicitly rather than relying on the fill colour alone. */
+.opt::after {
+  content: '';
+  position: absolute;
+  top: 50%; right: .95rem;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+.opt:hover::after { border-color: var(--copper); }
+.opt.selected::after {
+  background: #1A1108;
+  border-color: #1A1108;
+  box-shadow: inset 0 0 0 3px var(--copper-pale);
+}
+
+.opt-label { font-weight: 600; }
+.opt-hint { font-size: .78rem; color: var(--muted); }
+.opt.selected .opt-hint { color: rgba(26,17,8,0.7); }
+
+.demo-field.invalid .opt-grid {
+  outline: 1px solid rgba(200,74,74,0.45);
+  outline-offset: 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- "Other, please specify" ---------- */
+.opt-other { margin-top: .9rem; max-width: 420px; }
+.opt-other label {
+  display: block;
+  font-size: .82rem;
+  color: var(--muted);
+  margin-bottom: .35rem;
+}
+.opt-other input {
+  width: 100%;
+  padding: .8rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: .95rem;
+}
+.opt-other input:focus {
+  outline: none;
+  border-color: var(--copper);
+}
+
+/* ---------- Errors ---------- */
+.demo-error {
+  margin-top: .7rem;
+  font-size: .87rem;
+  color: #F0A8A8;
+}
+.demo-summary-error {
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(200,74,74,0.10);
+  border: 1px solid rgba(200,74,74,0.45);
+  color: #F0A8A8;
+  font-size: .92rem;
+  line-height: 1.6;
+}
+.demo-summary-error strong { color: #FFC9C9; }
+
+/* ---------- Actions ---------- */
+.demo-actions {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+.demo-note {
+  margin-top: 1rem;
+  font-size: .84rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .demo-actions { flex-direction: column-reverse; }
+  .demo-actions .btn { width: 100%; }
+  .opt-grid { grid-template-columns: 1fr 1fr; }
+}
