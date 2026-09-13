@@ -6,17 +6,26 @@
 // the scores in the database (not whatever the caller sends).
 //
 // Deploy:  supabase functions deploy send-results-email --no-verify-jwt
-// Secrets: RESEND_API_KEY   (required)
-//          FROM_EMAIL       e.g. "Pedagogy Evaluation Platform <pep@crmpilot.com.au>"
-//          ADMIN_EMAIL      who gets every new result
-//          SITE_URL         link back to the platform
+//
+// Secrets — use SMTP (e.g. a project Gmail account with an app password):
+//          SMTP_HOST=smtp.gmail.com  SMTP_PORT=465  SMTP_USER  SMTP_PASS
+// or the Resend API (needs a verified sending domain):
+//          RESEND_API_KEY
+// Always:  ADMIN_EMAIL   who gets every new result
+// Optional: FROM_EMAIL   defaults to "Pedagogy Evaluation Platform <SMTP_USER>"
+//           SITE_URL     link back to the platform
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 // ===========================================================================
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
+import nodemailer from 'npm:nodemailer@^9';
 
+const SMTP_HOST      = Deno.env.get('SMTP_HOST') ?? '';
+const SMTP_PORT      = Number(Deno.env.get('SMTP_PORT') ?? '465');
+const SMTP_USER      = Deno.env.get('SMTP_USER') ?? '';
+const SMTP_PASS      = Deno.env.get('SMTP_PASS') ?? '';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')  ?? 'Pedagogy Evaluation Platform <pep@crmpilot.com.au>';
+const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')  ?? `Pedagogy Evaluation Platform <${SMTP_USER}>`;
 const ADMIN_EMAIL    = Deno.env.get('ADMIN_EMAIL') ?? 'mushfiqurr@students.federation.edu.au';
 const SITE_URL       = Deno.env.get('SITE_URL')    ?? 'https://lmctpro2026.github.io/pedagogy-evaluation-platform';
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') ?? '';
@@ -40,7 +49,7 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    if (!RESEND_API_KEY) return json({ error: 'Email service not configured.' }, 500);
+    if (!SMTP_HOST && !RESEND_API_KEY) return json({ error: 'Email service not configured.' }, 500);
 
     const { sessionId, participantEmail, participantName } = await req.json();
     const session = await loadRecentSession(sessionId);
@@ -158,7 +167,20 @@ function button(href: string, label: string) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+const smtp = SMTP_HOST
+  ? nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,   // 25 and 587 are blocked from Edge Functions
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    })
+  : null;
+
 async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  if (smtp) {
+    await smtp.sendMail({ from: FROM_EMAIL, to, subject, html });
+    return;
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${RESEND_API_KEY}` },
