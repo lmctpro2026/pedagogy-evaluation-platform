@@ -152,7 +152,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    0 8px 0 -4px var(--surface), 0 8px 0 -3px var(--border),
+    0 16px 0 -8px var(--surface), 0 16px 0 -7px var(--border),
+    var(--shadow);
   transition: opacity .24s var(--ease), transform .24s var(--ease);
 }
 
@@ -209,12 +212,17 @@
   color: var(--text);
   text-align: center;
   cursor: pointer;
-  transition: background-color .15s var(--ease), border-color .15s var(--ease), box-shadow .15s var(--ease);
+  box-shadow: var(--key-edge), 0 4px 8px -6px rgba(23, 32, 44, 0.3);
+  transition: background-color .15s var(--ease), border-color .15s var(--ease),
+              box-shadow .15s var(--ease), transform .1s var(--ease);
 }
 .likert-option:hover {
   border-color: var(--border-strong);
   background: var(--surface-2);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--border-strong), 0 8px 14px -8px rgba(23, 32, 44, 0.35);
 }
+.likert-option:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--border-strong); }
 
 .likert-option .val {
   display: grid;
@@ -241,7 +249,8 @@
 .likert-option.selected {
   border-color: var(--accent);
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 2px 5px rgba(31, 90, 150, 0.2);
 }
 .likert-option.selected .val {
   border-color: var(--accent);

@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PEP — Sprint 3 Report</title>
+<!--
+  Source for PEP_Sprint3_Report.pdf. To regenerate after editing, from this folder:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --no-pdf-header-footer \
+      --print-to-pdf="PEP_Sprint3_Report.pdf" --virtual-time-budget=4000 \
+      "file://$PWD/PEP_Sprint3_Report.html"
+
+  Then stamp page numbers with stamp_page_numbers.py (same folder).
+-->
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm; }
+
+  :root {
+    --ink:      #16130F;
+    --body:     #2F2C27;
+    --muted:    #6B655C;
+    --line:     #D6D0C4;
+    --line-2:   #EBE6DC;
+    --copper:   #A2661F;
+    --copper-d: #74470F;
+    --wash:     #FAF7F1;
+    --green:    #2C6543;
+    --amber:    #8E6210;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    font-size: 10.2pt;
+    line-height: 1.52;
+    color: var(--body);
+  }
+  h1, h2, h3, h4, .sans {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  h1, h2, h3, h4 { color: var(--ink); margin: 0; font-weight: 700; }
+
+  /* ---------- Title page ---------- */
+  .cover { page-break-after: always; }
+  .rule-top { height: 3px; background: var(--copper); width: 58px; margin-bottom: 9mm; }
+  .eyebrow {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.6pt; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 4mm;
+  }
+  .cover h1 { font-size: 30pt; line-height: 1.05; letter-spacing: -.025em; margin-bottom: 3.5mm; }
+  .cover h1 em { font-style: italic; color: var(--copper); }
+  .cover .lede { font-size: 11pt; line-height: 1.55; max-width: 124mm; margin: 0 0 8mm; }
+
+  .cover-meta {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4.5mm 10mm;
+    border-top: 1px solid var(--line); padding-top: 5mm; margin-bottom: 6mm;
+  }
+  .cover-meta dt {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.2pt; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 1.2mm;
+  }
+  .cover-meta dd { margin: 0; font-size: 10pt; color: var(--ink); font-weight: 600; }
+
+  .cover-split {
+    display: grid; grid-template-columns: 1.15fr 1fr; gap: 10mm;
+    border-top: 1px solid var(--line); padding-top: 5mm;
+  }
+  .cover-split table { width: 100%; border-collapse: collapse; }
+  .cover-split td { padding: 1.5mm 0; font-size: 9.6pt; border-bottom: 1px solid var(--line-2); }
+  .cover-split td:first-child { color: var(--ink); font-weight: 600; }
+  .cover-split td:last-child { color: var(--muted); text-align: right; }
+  .cover-split tr:last-child td { border-bottom: none; }
+  .toc td:last-child { color: var(--ink); font-weight: 600; text-align: left; }
+  .toc td.tocn {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 8.2pt; color: var(--copper); font-weight: 700;
+    letter-spacing: .1em; width: 9mm; padding-right: 3mm;
+  }
+
+  /* ---------- Sections ---------- */
+  h2 {
+    font-size: 14pt; letter-spacing: -.012em;
+    margin: 8mm 0 1.5mm; padding-bottom: 1.8mm;
+    border-bottom: 1.6px solid var(--ink);
+    page-break-after: avoid; page-break-inside: avoid;
+  }
+  h2:first-of-type { margin-top: 0; }
+  h2 .n {
+    font-size: 8.2pt; color: var(--copper); letter-spacing: .16em;
+    display: block; margin-bottom: 1.2mm; font-weight: 700;
+  }
+  h3 { font-size: 10.4pt; margin: 5.5mm 0 1.8mm; page-break-after: avoid; }
+  p { margin: 0 0 2.6mm; }
+  .sub {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: var(--muted); font-size: 8.8pt; margin: -0.5mm 0 3.5mm;
+  }
+  ul { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.4mm; }
+
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8.4pt; background: var(--wash);
+    border: 1px solid var(--line-2); border-radius: 2px;
+    padding: 0.3mm 1.1mm; color: var(--copper-d);
+  }
+
+  table.data { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; page-break-inside: avoid; }
+  table.data th {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    text-align: left; font-size: 7.2pt; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--ink); padding: 0 3mm 1.8mm 0;
+  }
+  table.data td {
+    padding: 2.2mm 3mm 2.2mm 0; vertical-align: top;
+    border-bottom: 1px solid var(--line-2); font-size: 9.6pt;
+  }
+  table.data td:last-child, table.data th:last-child { padding-right: 0; }
+  table.data .k { font-weight: 600; color: var(--ink); }
+  table.data .nw { white-space: nowrap; }
+
+  .pill {
+    display: inline-block;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.2pt; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    padding: 0.6mm 1.8mm; border-radius: 2px; white-space: nowrap;
+  }
+  .pill.done { color: var(--green); background: #E6F0E9; border: 1px solid #B2D0BC; }
+  .pill.sched { color: var(--amber); background: #FAF0DA; border: 1px solid #E0C08A; }
+
+  .callout {
+    padding: 4mm 5mm; background: var(--wash);
+    border-left: 2px solid var(--copper); margin: 3mm 0 4mm;
+    page-break-inside: avoid; font-size: 9.7pt;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .lbl {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.4pt; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--copper-d); display: block; margin-bottom: 1.5mm; font-weight: 700;
+  }
+
+  .defect { page-break-inside: avoid; margin-bottom: 4.5mm; }
+  .defect h4 { font-size: 10pt; margin-bottom: 1mm; }
+  .defect .meta {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 7.8pt; color: var(--muted); margin-bottom: 1.5mm;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================ TITLE PAGE ============================ -->
+<div class="cover">
+  <div class="rule-top"></div>
+  <div class="eyebrow">Federation University Australia · ITECH3208 IT Capstone Project 1</div>
+  <h1>Sprint 3 <em>Report.</em></h1>
+  <p class="lede">
+    Pedagogy Evaluation Platform — a web-based self-assessment tool implementing Firmin's
+    (2020) Techno-Pedagogical Practice framework. Sprint 3 delivered optional demographic
+    collection, an expanded administrator dashboard, and survey completion validation, as
+    specified in the client planning meeting.
+  </p>
+
+  <dl class="cover-meta">
+    <div><dt>Unit</dt><dd>ITECH3208 IT Capstone Project 1</dd></div>
+    <div><dt>Sprint</dt><dd>Sprint 3</dd></div>
+    <div><dt>Status</dt><dd>Implementation complete</dd></div>
+    <div><dt>Date</dt><dd>14 August 2026</dd></div>
+  </dl>
+
+  <div class="cover-split">
+    <div>
+      <div class="eyebrow">Project team</div>
+      <table>
+        <tr><td>Mushfiqur Rahman</td><td>Lead Developer</td></tr>
+        <tr><td>Shafiullah Anik</td><td>Scrum Master</td></tr>
+        <tr><td>Albin Roy</td><td>Product Owner</td></tr>
+        <tr><td>Merajun Nabi</td><td>Tester</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="eyebrow">Contents</div>
+      <table class="toc">
+        <tr><td class="tocn">01</td><td>Summary</td></tr>
+        <tr><td class="tocn">02</td><td>Sprint objectives</td></tr>
+        <tr><td class="tocn">03</td><td>Demographic collection</td></tr>
+        <tr><td class="tocn">04</td><td>Administrator dashboard</td></tr>
+        <tr><td class="tocn">05</td><td>Validation</td></tr>
+        <tr><td class="tocn">06</td><td>Quality assurance</td></tr>
+        <tr><td class="tocn">07</td><td>Testing</td></tr>
+        <tr><td class="tocn">08</td><td>Outstanding items</td></tr>
+        <tr><td class="tocn">09</td><td>Appendix</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 01 SUMMARY ============================ -->
+<section>
+  <h2><span class="n">01</span>Summary</h2>
+
+  <p>
+    Sprint 3 addressed three requirement areas raised by the client representative in the
+    sprint planning meeting: optional demographic data collection, a substantially expanded
+    administrator dashboard, and stricter validation of survey completion. All three were
+    implemented, reviewed, and verified against the acceptance criteria set in that meeting.
+  </p>
+  <p>
+    Implementation is complete. A formal test script covering every acceptance criterion has
+    been prepared for the tester, and the build is ready to enter the testing phase. Section 08
+    records the items scheduled to follow: the database migration, deployment, and the one
+    verification step that depends on the migration.
+  </p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:30%">Requirement area</th><th>Outcome</th><th class="nw" style="width:16%">Status</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="k">Optional demographic collection</td>
+        <td>Consent question presented on survey completion, followed by a dedicated page
+            capturing age group, gender and academic level, linked to the same survey response.</td>
+        <td><span class="pill done">Delivered</span></td>
+      </tr>
+      <tr>
+        <td class="k">Administrator dashboard</td>
+        <td>Eight summary statistics, a numerical breakdown of the four framework categories,
+            and three demographic distribution charts.</td>
+        <td><span class="pill done">Delivered</span></td>
+      </tr>
+      <tr>
+        <td class="k">Validation and error handling</td>
+        <td>Per-question validation, an answer review screen, and a single completion gate that
+            prevents partial results from being scored or stored.</td>
+        <td><span class="pill done">Delivered</span></td>
+      </tr>
+      <tr>
+        <td class="k">Test documentation</td>
+        <td>A written test script covering the five verification items specified by the client
+            representative, plus dashboard and regression coverage.</td>
+        <td><span class="pill done">Delivered</span></td>
+      </tr>
+      <tr>
+        <td class="k">Database migration</td>
+        <td>Schema definition for the new demographics table, written and reviewed, scheduled
+            for execution ahead of release.</td>
+        <td><span class="pill sched">Scheduled</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================ 02 OBJECTIVES ============================ -->
+<section>
+  <h2><span class="n">02</span>Sprint objectives</h2>
+  <p class="sub">As specified in the Sprint 3 planning meeting.</p>
+
+  <table class="data">
+    <thead><tr><th class="nw" style="width:8%">Ref</th><th>Requirement as stated</th></tr></thead>
+    <tbody>
+      <tr><td class="k">R1</td><td>After the survey is completed, ask whether the participant is willing to provide demographic information. If they agree, present an additional page collecting those details, linked to the same survey response. Initial fields: age group, gender (with an option to specify), and academic level A–E.</td></tr>
+      <tr><td class="k">R2</td><td>Focus the sprint on the administrator dashboard, displaying summary statistics: number of participants, number who started the survey, number who completed it, number who created accounts, a summary of the TP / PD / TA / TPP results, and basic demographic summaries, preferably as bar charts.</td></tr>
+      <tr><td class="k">R3</td><td>Improve survey validation: participants cannot submit unless all questions are answered, an error message is shown if any question is incomplete, and results are saved only when the survey is fully complete.</td></tr>
+      <tr><td class="k">R4</td><td>Verify by testing: incomplete survey submission, error message behaviour, completion button functionality, correct score calculation, and the demographic page flow and data saving.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================ 03 DEMOGRAPHICS ============================ -->
+<section>
+  <h2><span class="n">03</span>Demographic collection <span style="font-size:8.2pt;color:var(--muted);font-weight:400;">— R1</span></h2>
+
+  <h3>Participant flow</h3>
+  <p>
+    On completing the survey the participant is asked <em>“Are you happy to provide demographic
+    information?”</em> Selecting <strong>Yes</strong> opens a dedicated page; selecting
+    <strong>No thanks</strong> proceeds directly to their results. Both paths reach the results
+    page in a single action, so the optional step never obstructs the participant.
+  </p>
+
+  <h3>Fields collected</h3>
+  <table class="data">
+    <thead><tr><th style="width:24%">Field</th><th>Options presented</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Age group</td><td>Under 25 · 25–34 · 35–44 · 45–54 · 55–64 · 65 or over · Prefer not to say</td></tr>
+      <tr><td class="k">Gender</td><td>Male · Female · Other, with a free-text description limited to 60 characters · Prefer not to say</td></tr>
+      <tr><td class="k">Academic level</td><td>Level A (Associate Lecturer) · Level B (Lecturer) · Level C (Senior Lecturer) · Level D (Associate Professor) · Level E (Professor) · Other · Prefer not to say</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Data model</h3>
+  <ul>
+    <li>A new <code>demographics</code> table stores one record per survey session, joined to the
+        score record by session identifier. This satisfies the requirement that the information
+        be linked to the same survey response.</li>
+    <li>Declines are recorded explicitly. Without this the opt-in rate could not be reported,
+        as a participant who declined would be indistinguishable from one never asked.</li>
+    <li>Records are write-once. No update or delete permission is granted, so possession of a
+        session identifier does not permit a record to be altered.</li>
+    <li>Permitted values are enforced by database constraints as well as by the interface, so
+        malformed data cannot be introduced by bypassing the form.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="lbl">Ethical considerations</span>
+    <p>
+      Every question offers a <em>“Prefer not to say”</em> option, so requiring an explicit
+      selection never compels disclosure. Responses are attached to the assessment record
+      rather than to a participant's name, and participants using the anonymous access route
+      may contribute demographic data without creating an account.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 04 DASHBOARD ============================ -->
+<section>
+  <h2><span class="n">04</span>Administrator dashboard <span style="font-size:8.2pt;color:var(--muted);font-weight:400;">— R2</span></h2>
+
+  <h3>Summary statistics</h3>
+  <p>
+    Eight figures are presented in two groups. Definitions are stated explicitly because
+    several of these counts could reasonably be interpreted in more than one way.
+  </p>
+  <table class="data">
+    <thead><tr><th style="width:28%">Statistic</th><th>Definition applied</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Participants</td><td>All non-administrator individuals known to the platform, whether registered or anonymous</td></tr>
+      <tr><td class="k">Started survey</td><td>Participants with at least one assessment session recorded</td></tr>
+      <tr><td class="k">Completed survey</td><td>Participants with at least one session marked complete</td></tr>
+      <tr><td class="k">Accounts created</td><td>Participants who registered an account, as distinct from anonymous access</td></tr>
+      <tr><td class="k">Completion rate</td><td>Completed divided by started</td></tr>
+      <tr><td class="k">In progress</td><td>Started but not yet completed</td></tr>
+      <tr><td class="k">Average score</td><td>Mean overall score across completed assessments</td></tr>
+      <tr><td class="k">Demographics</td><td>Count who provided details, with the declined count and resulting opt-in rate</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Framework category results</h3>
+  <p>
+    The existing category bar chart is now accompanied by a numerical table reporting the count
+    of responses, mean, median, lowest and highest value for each of the four framework
+    categories — Teaching Practice, Pedagogical Development, Technology Adoption and
+    Techno-Pedagogical Practice — together with an overall composite. Both the chart and the
+    table are computed from the same set of completed sessions, so the two presentations cannot
+    disagree.
+  </p>
+
+  <h3>Demographic summaries</h3>
+  <p>
+    Three bar charts present the distribution of age group, gender and academic level across
+    participants who opted in. Categories with no responses are omitted so that small samples
+    remain legible. Demographic data is also surfaced in the participant table, in individual
+    participant records, and as four additional columns in the exported data file for
+    subsequent analysis.
+  </p>
+
+  <div class="callout">
+    <span class="lbl">Defect identified during implementation</span>
+    <p>
+      Assessment sessions that could not be matched to a participant record were being excluded
+      from the dashboard entirely. These are now reported as unattached sessions. Had this gone
+      uncorrected, the participant count required by R2 would have under-reported the true
+      total.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 05 VALIDATION ============================ -->
+<section>
+  <h2><span class="n">05</span>Validation and error handling <span style="font-size:8.2pt;color:var(--muted);font-weight:400;">— R3</span></h2>
+
+  <h3>Two points of validation</h3>
+  <ul>
+    <li><strong>At each question.</strong> Attempting to advance without selecting a response
+        displays an explicit message — <em>“Please select a response before continuing — every
+        question is required.”</em> — in place of the previous behaviour, which silently
+        disabled the button and gave the participant no explanation. The message clears as soon
+        as a response is selected.</li>
+    <li><strong>At submission.</strong> The final question leads to a review screen listing all
+        twenty responses grouped by framework category. Attempting to submit while incomplete is
+        refused, and the resulting message identifies the specific unanswered question numbers
+        and links directly to the first of them.</li>
+  </ul>
+
+  <h3>Results saved only on completion</h3>
+  <p>
+    A single point in the code governs this. No score is calculated, stored, or transmitted
+    until all twenty questions hold a valid response. This was confirmed by attempting an
+    incomplete submission and verifying that neither the local record nor the database
+    contained any result.
+  </p>
+
+  <div class="callout">
+    <span class="lbl">Design decision</span>
+    <p>
+      Because each question must be answered before the participant can advance, the submission
+      step could not otherwise be reached in an incomplete state, making R3 impossible to
+      demonstrate. A <em>Review answers</em> control was therefore added to the progress bar,
+      allowing the review screen to be opened at any point. This both makes the rule testable
+      and lets participants check their progress before submitting.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 06 QA ============================ -->
+<section>
+  <h2><span class="n">06</span>Quality assurance</h2>
+  <p class="sub">
+    Four defects were identified during a structured review of the new code and resolved before
+    the build was passed to testing.
+  </p>
+
+  <div class="defect">
+    <h4>1 &nbsp;Save failures were reported to the participant as successes</h4>
+    <div class="meta">Data integrity · js/assessment.js</div>
+    <p>
+      The database client reports failures through a returned value rather than by raising an
+      exception, and that value was not being examined. A rejected write — whether from a
+      permissions rule, a constraint violation, or loss of connectivity — passed unnoticed, and
+      the participant was informed their results had been saved. Both the score update and the
+      response insertion are now checked, and the completion screen reports the true outcome in
+      either case.
+    </p>
+  </div>
+
+  <div class="defect">
+    <h4>2 &nbsp;Navigating away could cancel the save in progress</h4>
+    <div class="meta">Data loss · js/questionnaire.js</div>
+    <p>
+      The save was performed in the background while the completion screen already offered
+      controls that navigate to another page, so a prompt selection could terminate the request
+      before it completed. Those controls are now held, with a visible progress indicator, until
+      the write has settled, subject to a six-second limit so that a participant is never
+      detained by an unresponsive connection.
+    </p>
+  </div>
+
+  <div class="defect">
+    <h4>3 &nbsp;Validation messages could attach to the wrong question</h4>
+    <div class="meta">Correctness · js/questionnaire.js</div>
+    <p>
+      Two question panels exist briefly during the transition animation. An error message could
+      therefore be attached to the panel leaving the screen rather than the one presented to the
+      participant. All references are now bound to the active panel.
+    </p>
+  </div>
+
+  <div class="defect">
+    <h4>4 &nbsp;Returning from the review screen moved the participant to the final question</h4>
+    <div class="meta">Usability · js/questionnaire.js</div>
+    <p>
+      Opening the review screen partway through the survey and returning placed the participant
+      at question twenty rather than at the question they had left. The original position is now
+      preserved.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 07 TESTING ============================ -->
+<section>
+  <h2><span class="n">07</span>Testing and verification <span style="font-size:8.2pt;color:var(--muted);font-weight:400;">— R4</span></h2>
+
+  <h3>Developer verification performed</h3>
+  <p class="sub">Conducted in a browser against the local build prior to handover for testing.</p>
+  <table class="data">
+    <thead><tr><th style="width:34%">Area verified</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Incomplete submission</td><td>Refused, with the unanswered questions identified; no score and no database record written</td></tr>
+      <tr><td class="k">Error messages</td><td>Displayed on the correct question, cleared on selection, and did not permit advancing</td></tr>
+      <tr><td class="k">Score calculation</td><td>Verified against manual calculation: responses of 5, 4, 2 and 1 by category produced 100, 80, 40 and 20 respectively, with an overall score of 60, matching the results page</td></tr>
+      <tr><td class="k">Demographic flow</td><td>Accept, decline and skip paths, the free-text gender option, and the safeguard preventing direct access without a completed survey</td></tr>
+      <tr><td class="k">Dashboard statistics</td><td>All eight counts checked by hand against a controlled data set; the category composite matched the average score reported</td></tr>
+      <tr><td class="k">Degraded operation</td><td>Dashboard loads completely and reports the reason when the demographics table is absent, rather than failing</td></tr>
+      <tr><td class="k">Keyboard interaction</td><td>Number, arrow and enter keys behave correctly, including refusing to advance past an unanswered question</td></tr>
+      <tr><td class="k">Responsive layout</td><td>Review screen, demographic form and dashboard examined at 375&nbsp;px width</td></tr>
+      <tr><td class="k">Runtime errors</td><td>None observed in the browser console</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Formal testing</h3>
+  <p>
+    A written test script, <code>SPRINT3_TEST_PLAN.md</code>, has been prepared for the tester.
+    Sections 1 to 5 correspond to the five verification items specified under R4; sections 6 and
+    7 extend coverage to the dashboard and to regression checks on existing functionality. Each
+    step states the action and the expected result, with explicit pass criteria.
+  </p>
+
+  <div class="callout">
+    <span class="lbl">Limitation of developer verification</span>
+    <p>
+      The development environment used for this verification had no network route to the hosted
+      database, so the round trip to the live database could not be exercised. Client-side
+      behaviour is verified; confirming that a demographic record is written to the database is
+      covered by step 5.1.9 of the test script and is carried out during the testing phase.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 08 OUTSTANDING ============================ -->
+<section>
+  <h2><span class="n">08</span>Outstanding items</h2>
+  <p class="sub">Sequenced work remaining at the close of Sprint 3.</p>
+
+  <table class="data">
+    <thead><tr><th class="nw" style="width:7%">#</th><th style="width:27%">Item</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="k">1</td>
+        <td class="k">Database migration</td>
+        <td>The demographics table is defined in <code>sprint3-demographics.sql</code>, written
+            and reviewed. It is additive: it creates one table with its access rules and alters
+            no existing table. It is executed against the project database before release.</td>
+      </tr>
+      <tr>
+        <td class="k">2</td>
+        <td class="k">Testing phase</td>
+        <td>The build enters testing against <code>SPRINT3_TEST_PLAN.md</code>. Step 5.1.9,
+            confirming a demographic record reaches the database, follows item 1.</td>
+      </tr>
+      <tr>
+        <td class="k">3</td>
+        <td class="k">Deployment</td>
+        <td>The build is complete and verified locally but has not been released. Release follows
+            test sign-off, in line with the project's practice of not publishing directly to the
+            live site.</td>
+      </tr>
+      <tr>
+        <td class="k">4</td>
+        <td class="k">Email recipient</td>
+        <td>Results notifications are currently directed to a development address to avoid
+            sending test data to the client. This is changed to the client's address before
+            participants are recruited. Carried forward from an earlier sprint.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Considerations for the next sprint</h3>
+  <ul>
+    <li>Cross-tabulation of framework scores against demographic groups, which is the analysis
+        the demographic data was collected to support.</li>
+    <li>Extending the demographic summaries into the exportable report for the client.</li>
+    <li>Ethics consent recording, identified in earlier planning and not yet scheduled.</li>
+  </ul>
+</section>
+
+<!-- ============================ 09 APPENDIX ============================ -->
+<section>
+  <h2><span class="n">09</span>Appendix — files added and modified</h2>
+
+  <table class="data">
+    <thead><tr><th style="width:38%">File</th><th style="width:14%">Change</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td class="k">sprint3-demographics.sql</td><td>Added</td><td>Demographics table, value constraints and access rules</td></tr>
+      <tr><td class="k">demographics.html</td><td>Added</td><td>Demographic collection page</td></tr>
+      <tr><td class="k">js/demographics.js</td><td>Added</td><td>Form rendering, validation and saving</td></tr>
+      <tr><td class="k">js/demographic-options.js</td><td>Added</td><td>Shared definition of the permitted values</td></tr>
+      <tr><td class="k">css/demographics.css</td><td>Added</td><td>Demographic page presentation</td></tr>
+      <tr><td class="k">SPRINT3_TEST_PLAN.md</td><td>Added</td><td>Test script for the sprint acceptance criteria</td></tr>
+      <tr><td class="k">js/questionnaire.js</td><td>Modified</td><td>Validation, review screen and consent step</td></tr>
+      <tr><td class="k">js/assessment.js</td><td>Modified</td><td>Save-outcome reporting and demographic persistence</td></tr>
+      <tr><td class="k">js/admin.js</td><td>Modified</td><td>Statistics, category summary, demographic charts, export</td></tr>
+      <tr><td class="k">admin.html</td><td>Modified</td><td>Dashboard structure and new panels</td></tr>
+      <tr><td class="k">questionnaire.html</td><td>Modified</td><td>Review control in the progress bar</td></tr>
+      <tr><td class="k">css/questionnaire.css · css/admin.css</td><td>Modified</td><td>Review screen, consent panel and dashboard layout</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</body>
+</html>
