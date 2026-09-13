@@ -330,13 +330,14 @@
     showDone();
 
     const sessionId = sessionStorage.getItem('ped.sessionId') || null;
+    const notSaved = { saved: false };
     const write = window.PED.assessment
-      ? window.PED.assessment.completeSession(sessionId, responseList, scores).catch(() => false)
-      : Promise.resolve(false);
+      ? window.PED.assessment.completeSession(sessionId, responseList, scores).catch(() => notSaved)
+      : Promise.resolve(notSaved);
 
     // Never trap the participant behind a hung request.
-    const saved = await Promise.race([write, new Promise(r => setTimeout(() => r(false), 6000))]);
-    releaseDoneScreen(saved);
+    const result = await Promise.race([write, new Promise(r => setTimeout(() => r(notSaved), 8000))]);
+    releaseDoneScreen(result);
   }
 
   // ---------- Completion + optional demographics ----------
@@ -404,19 +405,52 @@
   // Session write has settled (or timed out) — safe to navigate away.
   // Says what actually happened: the scores are always readable on this device,
   // but only claim they reached the server when they did.
-  function releaseDoneScreen(saved) {
+  function releaseDoneScreen(result) {
     const yes = $('#demo-yes');
     const no  = $('#demo-no');
     if (!yes || !no) return;          // participant already moved on
     yes.disabled = false;
     no.disabled  = false;
-    setConsentStatus(saved
-      ? '<span class="tick" aria-hidden="true">✓</span> Your results are saved.'
-      : '<span class="warn" aria-hidden="true">!</span> Saved on this device — we could not reach the server.');
+
+    // Demographics attach to a stored session — without one there is nothing to link them to.
+    if (!result.saved) yes.disabled = true;
+
+    let msg;
+    if (!result.saved) {
+      msg = '<span class="warn" aria-hidden="true">!</span> Saved on this device only — we could not reach the server.';
+    } else if (window.PED.identity?.isRegistered()) {
+      msg = result.replaced
+        ? `<span class="tick" aria-hidden="true">✓</span> Saved as your ${result.year} result — it replaces your earlier ${result.year} attempt.`
+        : `<span class="tick" aria-hidden="true">✓</span> Saved as your ${result.year || new Date().getFullYear()} result.`;
+    } else {
+      msg = '<span class="tick" aria-hidden="true">✓</span> Your results are saved anonymously.';
+    }
+    setConsentStatus(msg);
   }
 
   // ---------- Welcome / resume / start ----------
-  function showWelcome() {
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // What happens to this attempt, in the participant's terms.
+  function attemptNoteHtml(session, history) {
+    const year = new Date().getFullYear();
+    if (!window.PED.identity?.isRegistered(session)) {
+      return `<p class="q-rule">Anonymous — nothing is stored until you submit. Then your answers are saved without your name.
+              <a href="index.html?signin=register">Create an account</a> to keep results and compare years.</p>`;
+    }
+    const thisYear = (history || []).find(h => h.year === year);
+    if (thisYear) {
+      const when = new Date(thisYear.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
+      const overall = window.PED.scoring.overallScore(thisYear.scores);
+      return `<p class="q-rule">You already have a ${year} result (${overall}/100, ${when}). Submitting again
+              <strong>replaces it</strong> — results from earlier years are kept. <a href="my-results.html">See my results</a></p>`;
+    }
+    return `<p class="q-rule">Signed in — this will be saved as your ${year} result. One result counts per year, and we keep up to 3 years so you can compare.</p>`;
+  }
+
+  function showWelcome(history) {
     const session = JSON.parse(localStorage.getItem(STORAGE_SESS) || 'null');
     const name = session?.displayName || 'there';
     const answered = answeredCount();
@@ -425,11 +459,12 @@
     currentCard = null;
     stage.innerHTML = `
       <div class="q-welcome fade-in">
-        <div class="eyebrow" style="margin-bottom:1.25rem;">Welcome${name === 'there' ? '' : ','} ${name}</div>
+        <div class="eyebrow" style="margin-bottom:1.25rem;">Welcome${name === 'there' ? '' : ','} ${escapeHtml(name)}</div>
         <h1>Twenty questions. <span class="italic-accent">Five minutes.</span></h1>
         <p>Answer each statement on a five-point scale, from Strongly Disagree to Strongly Agree. There are no right answers — this is a reflective profile.</p>
         <p class="muted" style="margin-bottom:1.5rem;">All ${total} questions must be answered before your results can be calculated.</p>
-        ${answered > 0 ? `<p class="muted" style="margin-bottom:1.5rem;">You have ${answered} of ${total} questions answered from a previous session.</p>` : ''}
+        ${answered > 0 ? `<p class="muted" style="margin-bottom:1.5rem;">You've already answered ${answered} of ${total} — pick up where you left off.</p>` : ''}
+        ${attemptNoteHtml(session, history)}
         <div style="display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap;">
           <button class="btn btn-primary btn-lg" id="q-begin">${answered > 0 ? 'Resume assessment' : 'Begin assessment'} →</button>
           ${answered > 0 ? `<button class="btn btn-ghost btn-lg" id="q-restart">Start over</button>` : ''}
@@ -466,10 +501,24 @@
   });
 
   // ---------- Boot ----------
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     // Update header progress placeholders
     $('#q-total').textContent = String(total).padStart(2,'0');
     $('#q-review-link').addEventListener('click', () => { returnToReview = false; showReview(); });
-    showWelcome();
+
+    const identity = window.PED.identity;
+    // Arrived without choosing (e.g. a direct link) — continue anonymously.
+    if (identity && !identity.current()) {
+      identity.begin({ mode: 'anonymous', displayName: 'Anonymous Participant', ts: Date.now() });
+      try { responses = JSON.parse(localStorage.getItem(STORAGE_RESP) || '{}') || {}; } catch { responses = {}; }
+    }
+
+    let history = [];
+    if (identity?.isRegistered() && window.PED.supabase) {
+      const user = await identity.requireAccount();
+      if (!user) return;   // redirecting to sign in
+      history = await window.PED.assessment.getHistory();
+    }
+    showWelcome(history);
   });
 })();

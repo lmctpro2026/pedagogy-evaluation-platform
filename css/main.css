@@ -6,7 +6,7 @@
   --surface-2:    #1C1914;
   --border:       #2A2520;
   --cream:        #F5F0E8;
-  --muted:        #6B6459;
+  --muted:        #978E81;   /* ≥ 4.5:1 on --bg (was #6B6459, ~3.3:1) */
   --copper:       #C17F3A;
   --copper-dark:  #96611E;
   --copper-light: #E8A84E;
@@ -60,6 +60,7 @@ body::before {
 }
 
 img, svg { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
 
 a {
   color: var(--copper);
@@ -471,8 +472,46 @@ body.cursor-hidden .cursor-circle { opacity: 0; }
   color: var(--muted);
 }
 
+/* ---------- Accessibility ---------- */
+:focus-visible {
+  outline: 2px solid var(--copper-light);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.skip-link {
+  position: absolute; left: 1rem; top: -100px; z-index: 300;
+  background: var(--copper); color: #1a1108; font-weight: 700;
+  padding: .6rem 1rem; border-radius: 8px;
+}
+.skip-link:focus { top: 1rem; color: #1a1108; }
+
+@media (prefers-reduced-motion: reduce) {
+  html, body { scroll-behavior: auto; }
+  .marquee-track, .fade-in { animation: none; }
+}
+
+/* ---------- Signed-in state (set by js/session.js) ---------- */
+body:not(.is-member) [data-auth="member"],
+body.is-member [data-auth="guest"] { display: none !important; }
+
+.nav-actions { display: inline-flex; align-items: center; gap: 1rem; }
+.nav-text-btn {
+  background: none; border: 0; padding: .35rem 0; cursor: pointer;
+  font-family: 'Poppins', sans-serif; font-weight: 500; font-size: .76rem;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(245,240,232,0.72);
+  transition: color .2s var(--ease);
+}
+.nav-text-btn:hover { color: var(--copper-light); }
+.nav-links a.nav-results { color: var(--copper-light); }
+
 /* Responsive */
 @media (max-width: 760px) {
   .footer-inner { grid-template-columns: 1fr; }
-  .nav-links a:not(.btn) { display: none; }
+  .nav-links { gap: 1rem; }
+  .nav-links > a:not(.btn) { display: none; }
+  .footer .legal { flex-direction: column; gap: .4rem; }
+}
+@media (max-width: 400px) {
+  .brand .muted { display: none; }
 }

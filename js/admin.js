@@ -83,7 +83,8 @@
           if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
           return;
         }
-        // Success — reload page
+        // Success — start the idle clock fresh, then reload page
+        window.PED.identity?.markActive();
         window.location.reload();
       });
     }
@@ -123,9 +124,9 @@
     // Logout — reveal and wire
     const logoutBtn = $('#admin-logout');
     if (logoutBtn) logoutBtn.hidden = false;
-    logoutBtn?.addEventListener('click', async () => {
-      await window.PED.supabase.auth.signOut();
-      window.location.href = 'index.html';
+    logoutBtn?.addEventListener('click', () => {
+      if (window.PED.identity) return window.PED.identity.signOut('manual');
+      window.PED.supabase.auth.signOut().finally(() => { window.location.href = 'admin.html'; });
     });
 
     // Search

@@ -1,0 +1,90 @@
+/* ====================================================================
+   My results — yearly results and comparison
+   ==================================================================== */
+
+.mr-shell { padding-block: clamp(2.5rem, 6vw, 5rem); min-height: 70vh; }
+.mr-loading { color: var(--muted); padding: 4rem 0; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.mr-head { max-width: 760px; margin-bottom: clamp(2rem, 4vw, 3rem); }
+.mr-head .eyebrow { margin-bottom: 1rem; color: var(--copper-light); }
+.mr-head h1 { font-size: clamp(2.2rem, 4.5vw, 3.6rem); margin-bottom: 1rem; }
+.mr-head p { color: rgba(245,240,232,0.72); line-height: 1.7; max-width: 60ch; }
+.mr-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.75rem; }
+
+/* ---- Year cards ---- */
+.mr-years {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+.mr-year {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.mr-year.is-latest {
+  border-color: rgba(193,127,58,0.5);
+  background: linear-gradient(160deg, rgba(193,127,58,0.09), var(--surface) 60%);
+}
+.mr-year-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.mr-year-num { font-family: 'JetBrains Mono', monospace; font-size: .9rem; letter-spacing: .1em; color: var(--cream); }
+.mr-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--copper-light); border: 1px solid rgba(193,127,58,0.4); border-radius: 999px; padding: .2rem .55rem;
+}
+.mr-overall { font-weight: 900; font-size: clamp(2.4rem, 4vw, 3.2rem); letter-spacing: -0.04em; line-height: 1; }
+.mr-overall span { font-size: 1rem; font-weight: 400; color: var(--muted); margin-left: .2rem; letter-spacing: 0; }
+.mr-desc { margin-top: .4rem; font-weight: 600; color: var(--copper-pale); }
+.mr-change { margin-top: 1rem; font-size: .88rem; display: flex; gap: .4rem; align-items: baseline; }
+.mr-vs { color: var(--muted); }
+.mr-date { margin-top: .35rem; font-size: .8rem; color: var(--muted); }
+
+.delta { font-family: 'JetBrains Mono', monospace; font-size: .85rem; white-space: nowrap; }
+.delta.up   { color: #8FD19E; }
+.delta.down { color: #F0A8A8; }
+.delta.flat, .delta.none { color: var(--muted); }
+
+/* ---- Comparison ---- */
+.mr-compare-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.mr-compare-head h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+
+.mr-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; }
+.mr-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+.mr-table th, .mr-table td { padding: .9rem 1.1rem; text-align: left; border-bottom: 1px solid var(--border); }
+.mr-table thead th {
+  font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500; background: var(--surface);
+}
+.mr-table tbody th { font-weight: 600; font-size: .92rem; }
+.mr-table .num { text-align: right; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+.mr-table tbody tr:last-child th, .mr-table tbody tr:last-child td { border-bottom: 0; }
+.mr-table tr.is-total th, .mr-table tr.is-total td { background: rgba(193,127,58,0.06); font-weight: 700; }
+
+.cat-code {
+  display: inline-block; min-width: 2.6rem; text-align: center; margin-right: .5rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .7rem; font-weight: 700;
+  padding: .2rem .4rem; border-radius: 5px;
+}
+.cat-code.tp  { background: rgba(42,74,122,0.3);  color: #BCD0EF; }
+.cat-code.pd  { background: rgba(90,46,110,0.3);  color: #DCBDED; }
+.cat-code.ta  { background: rgba(42,92,68,0.3);   color: #B6DCC4; }
+.cat-code.tpp { background: rgba(193,127,58,0.22); color: var(--copper-light); }
+
+.mr-chart { position: relative; height: 300px; margin-top: 2rem; }
+
+/* ---- Empty / signed-out ---- */
+.mr-empty { max-width: 560px; padding: clamp(2rem, 6vw, 5rem) 0; }
+.mr-empty .eyebrow { margin-bottom: 1rem; }
+.mr-empty h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); margin-bottom: 1rem; }
+.mr-empty p { color: rgba(245,240,232,0.72); line-height: 1.7; margin-bottom: 2rem; }
+
+@media (max-width: 800px) {
+  .mr-years { grid-template-columns: 1fr; }
+}

@@ -34,6 +34,8 @@
   }
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const OFFLINE_MSG = "Can't reach the sign-in service right now. Check your connection, or continue anonymously.";
+  const isNetworkError = err => /fetch|network|load failed|timed? ?out/i.test(err?.message || String(err || ''));
   const normEmail = v => (v || '').trim().toLowerCase();
 
   // -----------------------------------------------------------------------
@@ -321,8 +323,7 @@
             }
           }
           const displayName = (pendingName || '').split(' ')[0] || 'You';
-          storeUser(displayName, normEmail(pendingEmail));
-          persistLocal({ mode: 'register', email: normEmail(pendingEmail), displayName, fullName: pendingName, ts: Date.now() });
+          enterAs({ mode: 'register', email: normEmail(pendingEmail), displayName, fullName: pendingName, ts: Date.now() });
           pendingEmail = ''; pendingName = ''; savePending();
           closeModal();
           setTimeout(() => { window.location.href = 'questionnaire.html'; }, 400);
@@ -370,13 +371,14 @@
   // -----------------------------------------------------------------------
   // Session storage helpers
   // -----------------------------------------------------------------------
-  function persistLocal(profile) {
-    try { localStorage.setItem('ped.session', JSON.stringify(profile)); } catch {}
-  }
-  function storeUser(name, email) {
+  // Hand the chosen identity to session.js, which also clears a previous
+  // participant's answers from this device.
+  function enterAs(profile) {
+    if (window.PED.identity) { window.PED.identity.begin(profile); return; }
     try {
-      sessionStorage.setItem('ped.userName',  name);
-      sessionStorage.setItem('ped.userEmail', email);
+      localStorage.setItem('ped.session', JSON.stringify(profile));
+      sessionStorage.setItem('ped.userName',  profile.displayName || '');
+      sessionStorage.setItem('ped.userEmail', profile.email || '');
     } catch {}
   }
 
@@ -411,6 +413,7 @@
   // -----------------------------------------------------------------------
   async function doLogin(email, password) {
     const sb = window.PED.supabase;
+    let fullName = '';
     setSubmitting('l-submit', true);
     try {
       if (sb) {
@@ -443,24 +446,25 @@
             return;
           }
 
-          showFieldError('l-pass', msg.includes('invalid') || msg.includes('credentials')
+          showFieldError('l-pass', isNetworkError(error) ? OFFLINE_MSG
+            : msg.includes('invalid') || msg.includes('credentials')
             ? 'Invalid email or password.' : (error.message || 'Sign-in failed.'));
           setSubmitting('l-submit', false);
           return;
         }
         if (data?.user) {
           await upsertUserProfile(data.user.id, { email: normEmail(email), is_anonymous: false, consent_given: true });
+          fullName = await fetchFullName(data.user.id);
         }
       }
       const ne = normEmail(email);
-      const displayName = ne.split('@')[0];
-      storeUser(displayName, ne);
-      persistLocal({ mode: 'email', email: ne, displayName, ts: Date.now() });
+      const displayName = (fullName || '').split(' ')[0] || ne.split('@')[0];
+      enterAs({ mode: 'email', email: ne, displayName, fullName, ts: Date.now() });
       closeModal();
-      window.location.href = 'questionnaire.html';
+      window.location.href = nextPage();
     } catch (err) {
       console.error('[auth] login error:', err);
-      showFieldError('l-pass', 'Sign-in failed. Please try again.');
+      showFieldError('l-pass', isNetworkError(err) ? OFFLINE_MSG : 'Sign-in failed. Please try again.');
       setSubmitting('l-submit', false);
     }
   }
@@ -479,7 +483,9 @@
 
         if (error) {
           const msg = (error.message || '').toLowerCase();
-          if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+          if (isNetworkError(error)) {
+            showFieldError('r-email', OFFLINE_MSG);
+          } else if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
             showFieldError('r-email', 'An account with this email already exists. Click "Sign in" above.');
           } else if (msg.includes('email')) {
             showFieldError('r-email', error.message);
@@ -526,36 +532,63 @@
         }
       }
       const displayName = name.split(' ')[0];
-      storeUser(displayName, email);
-      persistLocal({ mode: 'register', email, displayName, fullName: name, ts: Date.now() });
+      enterAs({ mode: 'register', email, displayName, fullName: name, ts: Date.now() });
       closeModal();
       setTimeout(() => { window.location.href = 'questionnaire.html'; }, sb ? 400 : 0);
     } catch (err) {
       console.error('[auth] register error:', err);
-      showFieldError('r-email', `Registration failed: ${err.message || err}`);
+      showFieldError('r-email', isNetworkError(err) ? OFFLINE_MSG : `Registration failed: ${err.message || err}`);
       setSubmitting('r-submit', false);
     }
   }
 
+  // Anonymous participants are not signed in to Supabase and nothing is
+  // written until they submit a complete assessment (submit_assessment()).
   async function startAnonymous() {
     const sb = window.PED.supabase;
     setSubmitting('a-submit', true);
     try {
-      if (sb?.auth?.signInAnonymously) {
-        try {
-          const { data } = await sb.auth.signInAnonymously();
-          if (data?.user) {
-            await upsertUserProfile(data.user.id, { is_anonymous: true, consent_given: true });
-          }
-        } catch (e) {
-          console.warn('[auth] anonymous Supabase sign-in failed (using local):', e);
-        }
-      }
+      // Never attach an anonymous attempt to whoever last signed in here.
+      if (sb) await sb.auth.signOut().catch(() => {});
     } finally {
-      storeUser('Anonymous Participant', '');
-      persistLocal({ mode: 'anonymous', displayName: 'Anonymous Participant', ts: Date.now() });
+      enterAs({ mode: 'anonymous', displayName: 'Anonymous Participant', ts: Date.now() });
       closeModal();
       window.location.href = 'questionnaire.html';
     }
   }
+
+  async function fetchFullName(userId) {
+    const sb = window.PED.supabase;
+    try {
+      const { data } = await sb.from('users').select('full_name').eq('id', userId).maybeSingle();
+      return data?.full_name || '';
+    } catch { return ''; }
+  }
+
+  // Where to go after signing in: ?next=my-results returns people to their results.
+  function nextPage() {
+    const next = new URLSearchParams(window.location.search).get('next');
+    return next === 'my-results' ? 'my-results.html' : 'questionnaire.html';
+  }
+
+  // Arrivals from elsewhere: ?signin=1|register|expired opens the modal,
+  // ?signedout=idle|manual explains what just happened.
+  function handleArrivalParams() {
+    const params = new URLSearchParams(window.location.search);
+    const signin = params.get('signin');
+    const signedOut = params.get('signedout');
+    if (!signin && !signedOut) return;
+
+    if (signedOut === 'idle')        showToast('You were signed out after 10 minutes of inactivity.', 5000);
+    else if (signedOut === 'manual') showToast('You are signed out.');
+    if (signin === 'expired')        showToast('Your session ended — please sign in again.', 5000);
+
+    if (signin || signedOut === 'idle') openModal(signin === 'register' ? 'register' : 'signin');
+
+    // Keep ?next, drop the one-off flags so a refresh doesn't repeat them.
+    params.delete('signin'); params.delete('signedout');
+    const qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
+  }
+  document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('auth-modal')) handleArrivalParams(); });
 })();

@@ -6,11 +6,13 @@
 <title>Pedagogy Evaluation Platform — Evaluate your Techno-Pedagogical Practice</title>
 <meta name="description" content="A research-informed self-assessment for educators, based on the Firmin (2020) techno-pedagogical practice framework." />
 
-<link rel="stylesheet" href="css/main.css" />
-<link rel="stylesheet" href="css/landing.css" />
-<link rel="stylesheet" href="css/modal.css" />
+<link rel="stylesheet" href="css/main.css?v=1.1" />
+<link rel="stylesheet" href="css/landing.css?v=1.1" />
+<link rel="stylesheet" href="css/modal.css?v=1.1" />
 </head>
 <body>
+
+<a class="skip-link" href="#main">Skip to content</a>
 
 <!-- ===================== NAV ===================== -->
 <header class="nav">
@@ -19,184 +21,178 @@
       <span class="mark">P</span>
       <span>Pedagogy<span class="muted"> / Evaluation</span></span>
     </a>
-    <nav class="nav-links">
-      <a href="#framework">Firmin (2020)</a>
+    <nav class="nav-links" aria-label="Primary">
       <a href="#how">How it works</a>
-      <a href="#team">Our Team</a>
-      <a href="admin.html" class="nav-admin" title="Admin dashboard">Admin</a>
-      <button class="btn-signin" data-open-modal="register">Begin <span aria-hidden="true">→</span></button>
+      <a href="#framework">Framework</a>
+      <a href="#data">Your data</a>
+
+      <span class="nav-actions" data-auth="guest">
+        <button type="button" class="nav-text-btn" data-open-modal="signin">Sign in</button>
+        <button type="button" class="btn-signin" data-open-modal="register">Start <span aria-hidden="true">→</span></button>
+      </span>
+      <span class="nav-actions" data-auth="member">
+        <a href="my-results.html" class="nav-results">My results</a>
+        <button type="button" class="nav-text-btn" data-sign-out>Sign out</button>
+      </span>
     </nav>
   </div>
 </header>
 
+<main id="main">
+
 <!-- ===================== HERO ===================== -->
 <section class="hero">
-  <div class="container">
-    <div class="hero-grid">
+  <div class="container hero-grid">
 
-      <!-- Left: copy + CTA -->
-      <div>
-        <h1 data-animate>
-          Evaluate your<br>
-          <span class="accent">Techno&#8209;Pedagogical</span><br>
-          Practice.
-        </h1>
+    <div class="hero-copy">
+      <p class="hero-eyebrow" data-animate>Federation University Australia · Firmin (2020) framework</p>
 
-        <p class="hero-body" data-animate>
-          A research-informed self-assessment for educators. Twenty calibrated questions
-          across four dimensions — reflect, score, and receive a personalised written
-          report grounded in Dr Selena Firmin's doctoral framework.
-        </p>
+      <h1 data-animate>
+        Evaluate your
+        <span class="accent">Techno&#8209;Pedagogical</span>
+        Practice.
+      </h1>
 
-        <div class="hero-cta" data-animate>
-          <button class="btn btn-primary btn-lg" data-open-modal="register">
-            Begin Assessment
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </button>
-          <button class="btn btn-ghost btn-lg" data-anon-start>
-            Try Anonymously
-          </button>
-        </div>
+      <p class="hero-body" data-animate>
+        Twenty statements about how you teach with technology. Rate each one, see where you stand
+        across four dimensions, and take away a written report with recommendations.
+      </p>
 
-        <div class="hero-stats-row" data-animate>
-          <div class="hsr-item">
-            <span class="hsr-num">4</span>
-            <span class="hsr-lbl">Categories</span>
-          </div>
-          <div class="hsr-item">
-            <span class="hsr-num">20</span>
-            <span class="hsr-lbl">Questions</span>
-          </div>
-          <div class="hsr-item">
-            <span class="hsr-num">~5</span>
-            <span class="hsr-lbl">Minutes</span>
-          </div>
-          <div class="hsr-item">
-            <span class="hsr-num">∞</span>
-            <span class="hsr-lbl">Retakes</span>
-          </div>
-        </div>
+      <p class="hero-facts" data-animate>
+        <span>20 statements</span><span>4 dimensions</span><span>About 5 minutes</span>
+      </p>
+
+      <div class="hero-cta" data-animate data-auth="guest">
+        <button class="btn btn-primary btn-lg" data-open-modal="register">
+          Start assessment
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-lg" data-open-modal="signin">Sign in</button>
+        <button type="button" class="hero-anon" data-anon-start>Or continue anonymously — no account needed</button>
       </div>
 
-      <!-- Right: score preview card -->
-      <div data-animate>
-        <div class="score-card">
-          <div class="sc-header">
-            <span class="sc-title">Assessment Profile</span>
-            <span class="sc-badge">Sample</span>
-          </div>
-
-          <div class="sc-categories">
-            <div class="sc-cat tp">
-              <div class="sc-cat-head">
-                <span class="sc-code">TP</span>
-                <span class="sc-cat-name">Teaching Practice</span>
-                <span class="sc-pct">84%</span>
-              </div>
-              <div class="sc-bar-track">
-                <div class="sc-bar-fill" style="--w:84%; --d:0.2s"></div>
-              </div>
-            </div>
-            <div class="sc-cat pd">
-              <div class="sc-cat-head">
-                <span class="sc-code">PD</span>
-                <span class="sc-cat-name">Pedagogical Development</span>
-                <span class="sc-pct">68%</span>
-              </div>
-              <div class="sc-bar-track">
-                <div class="sc-bar-fill" style="--w:68%; --d:0.4s"></div>
-              </div>
-            </div>
-            <div class="sc-cat ta">
-              <div class="sc-cat-head">
-                <span class="sc-code">TA</span>
-                <span class="sc-cat-name">Technology Adoption</span>
-                <span class="sc-pct">91%</span>
-              </div>
-              <div class="sc-bar-track">
-                <div class="sc-bar-fill" style="--w:91%; --d:0.6s"></div>
-              </div>
-            </div>
-            <div class="sc-cat tpp">
-              <div class="sc-cat-head">
-                <span class="sc-code">TPP</span>
-                <span class="sc-cat-name">Techno-Pedagogical Practice</span>
-                <span class="sc-pct">76%</span>
-              </div>
-              <div class="sc-bar-track">
-                <div class="sc-bar-fill" style="--w:76%; --d:0.8s"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="sc-overall">
-            <span class="sc-overall-label">Overall Score</span>
-            <span class="sc-overall-score">79.8<span>/ 100</span></span>
-          </div>
-
-          <p class="sc-footer">Firmin (2020) · Monash University · Sample data only</p>
-        </div>
+      <div class="hero-cta" data-animate data-auth="member">
+        <a class="btn btn-primary btn-lg" href="questionnaire.html">
+          Go to assessment
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="my-results.html">My results</a>
+        <p class="hero-welcome">Signed in as <strong data-user-name></strong></p>
       </div>
-
     </div>
+
+    <!-- Signature: the first real statement, answerable right here -->
+    <div class="try-wrap" data-animate>
+      <article class="try-card" id="try-card" aria-labelledby="try-text">
+        <header class="try-head">
+          <span class="try-count">Statement <strong>01</strong> of 20</span>
+          <span class="badge tp"><span class="dot"></span> TP · Teaching Practice</span>
+        </header>
+
+        <p class="try-text" id="try-text"></p>
+
+        <div class="try-scale" role="radiogroup" aria-labelledby="try-text" id="try-scale"></div>
+        <div class="try-ends" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
+
+        <footer class="try-foot">
+          <p class="try-status" id="try-status" aria-live="polite">Try it — your answer carries into the assessment.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="try-continue" hidden>Continue →</button>
+        </footer>
+
+        <!-- 20 segments = the 20 statements, coloured by the category each belongs to -->
+        <div class="try-strip" aria-hidden="true" id="try-strip"></div>
+      </article>
+    </div>
+
   </div>
 </section>
-
-<!-- ===================== MARQUEE ===================== -->
-<div class="marquee" aria-hidden="true">
-  <div class="marquee-track">
-    <span>Teaching Practice</span><span class="dot">·</span>
-    <span class="alt">Pedagogical Development</span><span class="dot">·</span>
-    <span>Technology Adoption</span><span class="dot">·</span>
-    <span class="alt">Techno-Pedagogical Practice</span><span class="dot">·</span>
-    <span>Teaching Practice</span><span class="dot">·</span>
-    <span class="alt">Pedagogical Development</span><span class="dot">·</span>
-    <span>Technology Adoption</span><span class="dot">·</span>
-    <span class="alt">Techno-Pedagogical Practice</span><span class="dot">·</span>
-  </div>
-</div>
 
 <!-- ===================== HOW IT WORKS ===================== -->
 <section id="how" class="section container">
   <div class="section-head-row reveal">
     <div>
       <div class="section-eyebrow">How it works</div>
-      <h2>Three steps.<br><span class="italic-accent">One clear picture.</span></h2>
+      <h2>Answer. Score. <span class="italic-accent">Reflect.</span></h2>
     </div>
-    <p>Each response is weighted, scored, and contextualised against the Firmin (2020) techno-pedagogical practice framework.</p>
+    <p>Every response is weighted and read against the Firmin (2020) techno-pedagogical practice framework.</p>
   </div>
 
-  <div class="howto-grid">
-    <div class="howto-card reveal">
+  <ol class="howto-grid">
+    <li class="howto-card reveal">
       <div class="howto-card-top">
-        <span class="howto-num">01</span>
-        <span class="howto-tag">~5 minutes</span>
+        <span class="howto-num">Step 1</span>
+        <span class="howto-tag">About 5 minutes</span>
       </div>
-      <h3>Complete</h3>
-      <p>Answer 20 calibrated statements across four research-defined categories on a five-point Likert scale. No time pressure — auto-saves as you go.</p>
-    </div>
-    <div class="howto-card reveal">
+      <h3>Answer</h3>
+      <p>Rate 20 statements from Strongly Disagree to Strongly Agree. Answers save on your device as you go, and you review them all before submitting.</p>
+    </li>
+    <li class="howto-card reveal">
       <div class="howto-card-top">
-        <span class="howto-num">02</span>
-        <span class="howto-tag">Live results</span>
+        <span class="howto-num">Step 2</span>
+        <span class="howto-tag">Instant</span>
       </div>
       <h3>Score</h3>
-      <p>The platform calculates weighted percentages per category and visualises your techno-pedagogical profile instantly.</p>
-    </div>
-    <div class="howto-card reveal">
+      <p>See a score out of 100 for each of the four dimensions, plus an overall profile of your techno-pedagogical practice.</p>
+    </li>
+    <li class="howto-card reveal">
       <div class="howto-card-top">
-        <span class="howto-num">03</span>
+        <span class="howto-num">Step 3</span>
         <span class="howto-tag">PDF · APA cited</span>
       </div>
-      <h3>Report</h3>
-      <p>Receive a full written report with interpretations, targeted recommendations, and an exportable PDF grounded in Firmin (2020).</p>
+      <h3>Reflect</h3>
+      <p>Read a written report with interpretations and targeted recommendations, export it as a PDF, and — with an account — compare against past years.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- ===================== ACCESS CHOICE ===================== -->
+<section id="access" class="section container access-section">
+  <div class="section-head-row reveal">
+    <div>
+      <div class="section-eyebrow">Two ways to take part</div>
+      <h2>Track your growth, or <span class="italic-accent">just reflect.</span></h2>
+    </div>
+    <p>Both give you the same questions, scores and report. The difference is what happens to your results afterwards.</p>
+  </div>
+
+  <div class="access-grid reveal">
+    <div class="access-card access-card--account">
+      <div class="access-label">With an account</div>
+      <h3>Build a record over the years</h3>
+      <ul class="access-list">
+        <li>Results are saved to your account</li>
+        <li>One result counts per year — retaking replaces this year's</li>
+        <li>Compare up to 3 years side by side</li>
+        <li>Signs out after 10 minutes without activity</li>
+      </ul>
+      <div class="access-actions" data-auth="guest">
+        <button class="btn btn-primary" data-open-modal="register">Create account</button>
+        <button class="btn btn-ghost" data-open-modal="signin">Sign in</button>
+      </div>
+      <div class="access-actions" data-auth="member">
+        <a class="btn btn-primary" href="my-results.html">View my results</a>
+      </div>
+    </div>
+
+    <div class="access-card">
+      <div class="access-label">Anonymously</div>
+      <h3>A one-off reflection</h3>
+      <ul class="access-list">
+        <li>No account and no name</li>
+        <li>Nothing is stored until you submit</li>
+        <li>Scores and PDF report straight away</li>
+        <li class="is-minus">No year-to-year comparison</li>
+      </ul>
+      <div class="access-actions">
+        <button class="btn btn-ghost" data-anon-start>Continue anonymously</button>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ===================== FRAMEWORK ===================== -->
 <section id="framework" class="section container">
-  <div class="section-eyebrow reveal" style="margin-bottom:2rem;">The Framework</div>
+  <div class="section-eyebrow reveal">The framework</div>
 
   <div class="framework-grid">
     <div class="reveal">
@@ -208,74 +204,93 @@
       <p class="framework-body">
         Dr Selena Firmin's doctoral research examined how IT academics perceive and apply teaching
         philosophy, identifying four interrelated dimensions of techno-pedagogical practice.
-        This platform operationalises that framework into a practical, repeatable self-assessment.
+        This platform turns that framework into a practical, repeatable self-assessment.
       </p>
     </div>
 
-    <div class="cat-list reveal">
-      <div class="cat-row tp">
+    <ul class="cat-list reveal">
+      <li class="cat-row tp">
         <span class="code">TP</span>
         <span class="meta">
           <span class="name">Teaching Practice</span>
           <span class="desc">Student-centred design, reflective adaptation.</span>
         </span>
-        <span class="arrow">→</span>
-      </div>
-      <div class="cat-row pd">
+        <span class="range">Statements 1–5</span>
+      </li>
+      <li class="cat-row pd">
         <span class="code">PD</span>
         <span class="meta">
           <span class="name">Pedagogical Development</span>
           <span class="desc">Research engagement, collegial growth.</span>
         </span>
-        <span class="arrow">→</span>
-      </div>
-      <div class="cat-row ta">
+        <span class="range">Statements 6–10</span>
+      </li>
+      <li class="cat-row ta">
         <span class="code">TA</span>
         <span class="meta">
           <span class="name">Technology Adoption</span>
           <span class="desc">Confident, evaluated use of digital tools.</span>
         </span>
-        <span class="arrow">→</span>
-      </div>
-      <div class="cat-row tpp">
+        <span class="range">Statements 11–15</span>
+      </li>
+      <li class="cat-row tpp">
         <span class="code">TPP</span>
         <span class="meta">
           <span class="name">Techno-Pedagogical Practice</span>
-          <span class="desc">Intentional integration of pedagogy + tech.</span>
+          <span class="desc">Intentional integration of pedagogy and technology.</span>
         </span>
-        <span class="arrow">→</span>
-      </div>
-    </div>
+        <span class="range">Statements 16–20</span>
+      </li>
+    </ul>
   </div>
 </section>
 
-<!-- ===================== TEAM ===================== -->
-<section id="team" class="section container">
+<!-- ===================== YOUR DATA ===================== -->
+<section id="data" class="section container">
+  <div class="section-head-row reveal">
+    <div>
+      <div class="section-eyebrow">Your data</div>
+      <h2>What we keep, and <span class="italic-accent">for how long.</span></h2>
+    </div>
+  </div>
 
-  <div class="section-eyebrow reveal" style="margin-bottom:2.25rem;">ITECH3208 · Capstone Team · Federation University Australia</div>
+  <dl class="data-grid reveal">
+    <div class="data-item">
+      <dt>What's stored</dt>
+      <dd>Your 20 answers, the four category scores, and any optional demographics you choose to give. Anonymous attempts are stored only once you submit, without a name.</dd>
+    </div>
+    <div class="data-item">
+      <dt>How long</dt>
+      <dd>Three years, then deleted automatically. With an account, one result is kept per calendar year — a retake replaces that year's result.</dd>
+    </div>
+    <div class="data-item">
+      <dt>Who can see it</dt>
+      <dd>You, and the research team led by Dr Selena Firmin at Federation University Australia. Nothing is shared with third parties.</dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ===================== TEAM ===================== -->
+<section id="team" class="section container team-section">
+  <div class="section-eyebrow reveal">ITECH3208 capstone team · Federation University Australia</div>
 
   <div class="team-grid reveal">
-
     <div class="team-card team-card--lead">
       <div class="tc-role">Developer</div>
       <div class="tc-name">Mushfiqur Rahman</div>
     </div>
-
     <div class="team-card">
       <div class="tc-role">Scrum Master</div>
       <div class="tc-name">Shafiullah Anik</div>
     </div>
-
     <div class="team-card">
       <div class="tc-role">Product Owner</div>
       <div class="tc-name">Kenny George Joseph</div>
     </div>
-
     <div class="team-card">
       <div class="tc-role">Tester</div>
       <div class="tc-name">Albin Roy</div>
     </div>
-
     <div class="team-card team-card--client">
       <div class="tc-client-left">
         <div class="tc-role">Client · Research Supervisor</div>
@@ -285,29 +300,10 @@
         <span class="tc-sub">Monash University · Firmin (2020)</span>
       </div>
     </div>
-
-  </div>
-
-  <!-- CTA strip -->
-  <div class="cta-strip reveal" style="margin-top:3rem;">
-    <div>
-      <div class="section-eyebrow" style="margin-bottom:.85rem;">Ready to begin?</div>
-      <h2>
-        Built at <span class="italic-accent">Federation&nbsp;University&nbsp;Australia</span>
-        for educators everywhere.
-      </h2>
-    </div>
-    <div style="position:relative;z-index:2;">
-      <button class="btn btn-primary btn-lg" data-open-modal="register" style="width:100%;">
-        Start your assessment
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </button>
-      <button class="btn btn-ghost btn-lg" data-anon-start style="width:100%; margin-top:.6rem;">
-        Continue anonymously
-      </button>
-    </div>
   </div>
 </section>
+
+</main>
 
 <!-- ===================== FOOTER ===================== -->
 <footer class="footer">
@@ -317,14 +313,15 @@
         <span class="mark">P</span>
         <span>Pedagogy Evaluation Platform</span>
       </div>
-      <p>A capstone project (ITECH3208) at Federation University Australia, operationalising the Firmin (2020) techno-pedagogical practice framework as a self-assessment tool for educators.</p>
+      <p>A capstone project (ITECH3208) at Federation University Australia, turning the Firmin (2020) techno-pedagogical practice framework into a self-assessment for educators.</p>
     </div>
     <div>
-      <h4>Project</h4>
+      <h4>Platform</h4>
       <ul>
         <li><a href="#how">How it works</a></li>
-        <li><a href="#framework">Framework</a></li>
-        <li><a href="questionnaire.html">Assessment</a></li>
+        <li><a href="#data">Your data</a></li>
+        <li><a href="my-results.html">My results</a></li>
+        <li><a href="admin.html">Admin</a></li>
       </ul>
     </div>
     <div>
@@ -338,7 +335,7 @@
   </div>
   <div class="container legal">
     <span>© 2026 Federation University Australia · Pedagogy Evaluation Platform</span>
-    <span>v1.0 · ITECH3208</span>
+    <span>v1.1 · ITECH3208</span>
   </div>
 </footer>
 
@@ -366,10 +363,10 @@
       </div>
       <div class="field">
         <label for="l-pass">Password</label>
-        <input id="l-pass" type="password" placeholder="Minimum 8 characters" autocomplete="current-password" />
+        <input id="l-pass" type="password" placeholder="Your password" autocomplete="current-password" />
         <span class="err"></span>
       </div>
-      <button class="btn btn-primary" id="l-submit" type="submit" disabled>Sign in & continue</button>
+      <button class="btn btn-primary" id="l-submit" type="submit" disabled>Sign in &amp; continue</button>
       <div class="alt-line">New here? <button type="button" data-open-modal="register">Create an account</button></div>
     </form>
 
@@ -387,7 +384,7 @@
       </div>
       <div class="field">
         <label for="r-pass">Password</label>
-        <input id="r-pass" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+        <input id="r-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
         <span class="err"></span>
         <div class="strength" id="r-strength" aria-hidden="true">
           <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
@@ -396,9 +393,9 @@
       </div>
       <label class="consent">
         <input id="r-consent" type="checkbox" />
-        <span>I consent to my responses being stored for the purpose of generating my personalised assessment report. No data is shared with third parties.</span>
+        <span>I consent to my responses being stored for up to 3 years to generate my report and let me compare results over time. No data is shared with third parties.</span>
       </label>
-      <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account & begin</button>
+      <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account &amp; begin</button>
       <div class="alt-line">Already registered? <button type="button" data-open-modal="signin">Sign in instead</button></div>
     </form>
 
@@ -423,16 +420,16 @@
     <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>
       <div class="anon-card">
         <h4>One click, no account</h4>
-        <p>Complete the entire assessment, view results, and export a PDF without registering. Responses are kept on this device only.</p>
+        <p>Take the full assessment, see your scores and export a PDF without registering. Nothing is stored until you submit — then your answers are saved without your name.</p>
       </div>
       <label class="consent">
         <input id="a-consent" type="checkbox" />
-        <span>I understand my responses are stored locally on this device for the duration of my assessment.</span>
+        <span>I understand my completed answers are stored anonymously for research, for up to 3 years.</span>
       </label>
       <button class="btn btn-primary" id="a-submit" type="submit" disabled>
         Continue anonymously →
       </button>
-      <div class="alt-line">Prefer to save results? <button type="button" data-open-modal="register">Create an account</button></div>
+      <div class="alt-line">Want to compare years? <button type="button" data-open-modal="register">Create an account</button></div>
     </form>
   </div>
 </div>
@@ -441,28 +438,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-<script src="js/supabase.js"></script>
-<script src="js/questions.js"></script>
-<script src="js/scoring.js"></script>
-<script src="js/cursor.js"></script>
-<script src="js/auth.js"></script>
-
-<script>
-  if (window.gsap) {
-    gsap.from('[data-animate]', {
-      opacity: 0, y: 24, duration: 0.7,
-      stagger: 0.09, ease: 'power3.out'
-    });
-    if (window.ScrollTrigger) {
-      gsap.registerPlugin(ScrollTrigger);
-      gsap.utils.toArray('.reveal').forEach(el => {
-        gsap.from(el, {
-          scrollTrigger: { trigger: el, start: 'top 88%' },
-          opacity: 0, y: 28, duration: 0.65, ease: 'power3.out'
-        });
-      });
-    }
-  }
-</script>
+<script src="js/supabase.js?v=1.1"></script>
+<script src="js/session.js?v=1.1"></script>
+<script src="js/questions.js?v=1.1"></script>
+<script src="js/scoring.js?v=1.1"></script>
+<script src="js/cursor.js?v=1.1"></script>
+<script src="js/auth.js?v=1.1"></script>
+<script src="js/landing.js?v=1.1"></script>
 </body>
 </html>
