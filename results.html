@@ -4,10 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Your Results · Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=1.2" />
-<link rel="stylesheet" href="css/results.css?v=1.2" />
+<link rel="stylesheet" href="css/main.css?v=2.0" />
+<link rel="stylesheet" href="css/results.css?v=2.0" />
 </head>
 <body>
+
+<a class="skip-link" href="#results-root">Skip to results</a>
 
 <header class="nav">
   <div class="container nav-inner">
@@ -24,83 +26,94 @@
 
 <main id="results-root">
 
-  <section class="results-hero">
+  <!-- Header band: title and overall summary -->
+  <section class="results-header">
     <div class="container">
-      <div class="eyebrow">Pedagogy Evaluation · Firmin (2020) Framework</div>
-      <h1>Your <span class="italic-accent">Results.</span></h1>
-      <p>A weighted snapshot of your techno-pedagogical practice across four research-defined categories. Hover any score for detail or open the full written report.</p>
+      <p class="eyebrow">Pedagogy evaluation · Firmin (2020) framework</p>
+      <h1>Your results</h1>
+      <p class="results-intro">A weighted snapshot of your techno-pedagogical practice across four research-defined categories. Open the full report for a written interpretation.</p>
 
-      <div class="overall-strip">
-        <div>
-          <div class="label">Overall Score</div>
-          <div class="big" id="overall-num">—<span class="of">/100</span></div>
+      <div class="overall-summary">
+        <div class="overall-item">
+          <div class="overall-label">Overall score</div>
+          <div class="overall-score" id="overall-num">—<span class="of"> / 100</span></div>
         </div>
-        <div style="flex:1; min-width:220px;">
-          <div class="label">Descriptor</div>
-          <div class="descriptor" id="overall-desc">—</div>
-          <div class="session" id="overall-when">—</div>
+        <div class="overall-item overall-item-grow">
+          <div class="overall-label">Descriptor</div>
+          <div class="overall-descriptor" id="overall-desc">—</div>
+          <div class="overall-when" id="overall-when">—</div>
         </div>
-        <div style="display:flex; gap:.6rem;">
-          <a class="btn btn-primary" href="report.html">View Full Report →</a>
-        </div>
+        <a class="btn btn-primary" href="report.html">View full report</a>
       </div>
     </div>
   </section>
 
-  <section class="scores-section">
+  <!-- Category breakdown -->
+  <section class="results-section">
     <div class="container">
-      <div class="section-head" style="margin-bottom:0;">
-        <h2 class="h-1">Category breakdown.</h2>
-        <p class="muted">Weighted percentages calculated from your 20 responses.</p>
+      <div class="section-head">
+        <h2>Category breakdown</h2>
+        <p>Weighted percentages calculated from your 20 responses.</p>
       </div>
       <div class="scores-grid" id="scores-grid">
-        <!-- score cards injected -->
+        <!-- score cards injected by js/results.js -->
       </div>
     </div>
   </section>
 
-  <section class="chart-section">
+  <!-- Chart -->
+  <section class="results-section">
     <div class="container">
-      <div class="chart-grid">
-        <div class="chart-wrap">
-          <canvas id="scores-chart"></canvas>
-          <div class="chart-center">
-            <div>
-              <div class="lbl">Composite</div>
-              <div class="val" id="chart-overall">—</div>
+      <div class="chart-card">
+        <div class="section-head">
+          <h2>At a glance</h2>
+          <p>Hover a segment to see its score.</p>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-wrap">
+            <canvas id="scores-chart" role="img" aria-label="Doughnut chart of your four category scores"></canvas>
+            <div class="chart-center">
+              <div>
+                <div class="chart-center-label">Composite</div>
+                <div class="chart-center-value" id="chart-overall">—</div>
+              </div>
             </div>
           </div>
-        </div>
-        <div>
-          <div class="eyebrow" style="margin-bottom:1rem;">At a glance</div>
-          <div class="chart-legend" id="chart-legend"></div>
+          <ul class="chart-legend" id="chart-legend"></ul>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Anonymous email capture — shown only when no email was collected at sign-in -->
-  <section class="email-capture-section" id="email-capture" style="display:none;">
+  <section class="results-section" id="email-capture" hidden>
     <div class="container">
-      <div class="email-capture-card">
-        <div class="eyebrow" style="margin-bottom:.75rem;">Optional</div>
-        <h3>Receive your results by email</h3>
-        <p>Enter your email address and we'll send a copy of your results. Your data supports Dr Firmin's research at Federation University Australia — all responses are confidential.</p>
-        <form class="email-capture-form" id="email-capture-form" novalidate>
-          <input type="email" id="ec-email" placeholder="your@email.com" autocomplete="email" />
-          <button type="submit" class="btn btn-primary" id="ec-submit">Send results</button>
-        </form>
-        <p class="ec-msg" id="ec-msg"></p>
-        <button class="btn-link" id="ec-skip">No thanks, continue without email</button>
+      <div class="email-card">
+        <div class="email-copy">
+          <p class="eyebrow">Optional</p>
+          <h2>Receive your results by email</h2>
+          <p>Enter your email address and we'll send a copy of your results. Your data supports Dr Firmin's research at Federation University Australia — all responses are confidential.</p>
+        </div>
+        <div class="email-form-wrap">
+          <form class="email-form" id="email-capture-form" novalidate>
+            <label class="email-label" for="ec-email">Email address</label>
+            <div class="email-row">
+              <input type="email" id="ec-email" placeholder="your@email.com" autocomplete="email" />
+              <button type="submit" class="btn btn-primary" id="ec-submit">Send results</button>
+            </div>
+          </form>
+          <p class="ec-msg" id="ec-msg" aria-live="polite"></p>
+          <button type="button" class="btn-link" id="ec-skip">No thanks, continue without email</button>
+        </div>
       </div>
     </div>
   </section>
 
   <div class="container actions-row">
-    <a class="btn btn-primary btn-lg" href="report.html">View Full Report</a>
-    <a class="btn btn-ghost btn-lg" href="my-results.html" data-auth="member">Open my dashboard</a>
-    <button class="btn btn-ghost btn-lg" id="a-pdf">Export PDF</button>
-    <button class="btn btn-ghost btn-lg" id="a-retake">Retake assessment</button>
+    <a class="btn btn-primary" href="report.html">View full report</a>
+    <a class="btn btn-ghost" href="my-results.html" data-auth="member">Open my dashboard</a>
+    <button type="button" class="btn btn-ghost" id="a-pdf">Export PDF</button>
+    <button type="button" class="btn btn-ghost" id="a-retake">Retake assessment</button>
   </div>
 
   <script>
@@ -109,24 +122,31 @@
       const email = sessionStorage.getItem('ped.userEmail') || '';
       if (!email || !email.includes('@')) {
         const sec = document.getElementById('email-capture');
-        if (sec) sec.style.display = '';
+        if (sec) sec.hidden = false;
       }
 
-      const form = document.getElementById('email-capture-form');
-      const msg  = document.getElementById('ec-msg');
-      const skip = document.getElementById('ec-skip');
+      const form  = document.getElementById('email-capture-form');
+      const input = document.getElementById('ec-email');
+      const msg   = document.getElementById('ec-msg');
+      const skip  = document.getElementById('ec-skip');
+
+      function setMessage(text, state) {
+        msg.textContent = text;
+        msg.classList.toggle('is-success', state === 'success');
+        msg.classList.toggle('is-danger', state === 'danger');
+        input.classList.toggle('is-invalid', state === 'danger');
+      }
 
       if (skip) skip.addEventListener('click', () => {
         const sec = document.getElementById('email-capture');
-        if (sec) sec.style.display = 'none';
+        if (sec) sec.hidden = true;
       });
 
       if (form) form.addEventListener('submit', async e => {
         e.preventDefault();
-        const emailVal = document.getElementById('ec-email').value.trim();
+        const emailVal = input.value.trim();
         if (!emailVal || !emailVal.includes('@')) {
-          msg.textContent = 'Please enter a valid email address.';
-          msg.style.color = '#e05a5a';
+          setMessage('Please enter a valid email address.', 'danger');
           return;
         }
 
@@ -156,12 +176,10 @@
             }
           }
 
-          msg.textContent = 'Results sent! Check your inbox.';
-          msg.style.color = '#5aaa7a';
+          setMessage('Results sent! Check your inbox.', 'success');
           btn.textContent = 'Sent ✓';
         } catch (err) {
-          msg.textContent = 'Could not send — please try again.';
-          msg.style.color = '#e05a5a';
+          setMessage('Could not send — please try again.', 'danger');
           btn.disabled = false;
           btn.textContent = 'Send results';
         }
@@ -180,12 +198,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=1.2"></script>
-<script src="js/session.js?v=1.2"></script>
-<script src="js/questions.js?v=1.2"></script>
-<script src="js/scoring.js?v=1.2"></script>
-<script src="js/cursor.js?v=1.2"></script>
-<script src="js/assessment.js?v=1.2"></script>
-<script src="js/results.js?v=1.2"></script>
+<script src="js/supabase.js?v=2.0"></script>
+<script src="js/session.js?v=2.0"></script>
+<script src="js/questions.js?v=2.0"></script>
+<script src="js/scoring.js?v=2.0"></script>
+<script src="js/assessment.js?v=2.0"></script>
+<script src="js/results.js?v=2.0"></script>
 </body>
 </html>

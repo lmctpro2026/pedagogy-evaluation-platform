@@ -4,32 +4,29 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin Dashboard — Pedagogy Evaluation Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700;0,900;1,700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/admin.css?v=1.2" />
+<link rel="stylesheet" href="css/main.css?v=2.0" />
+<link rel="stylesheet" href="css/admin.css?v=2.0" />
 </head>
 <body data-signout-redirect="admin.html">
 
-<!-- ========================= NAV ========================= -->
-<header class="admin-nav">
-  <div class="admin-nav-inner">
-    <a href="index.html" class="admin-brand">
-      <span class="mark">P</span>
-      <span>Pedagogy<span style="opacity:.5"> / Admin</span></span>
-      <span class="pill">Dashboard</span>
+<!-- ========================= TOP BAR ========================= -->
+<header class="nav admin-nav">
+  <div class="nav-inner admin-container">
+    <a href="index.html" class="brand admin-brand">
+      <span class="mark" aria-hidden="true">P</span>
+      <span class="admin-brand-text">Pedagogy Evaluation Platform<span class="muted"> · Admin</span></span>
     </a>
-    <div class="admin-nav-right">
-      <span class="admin-user-pill" id="admin-user-pill"></span>
-      <button class="btn btn-ghost" id="admin-logout" hidden>Sign out</button>
+    <div class="nav-actions">
+      <span class="pill admin-user-pill" id="admin-user-pill"></span>
+      <button class="btn btn-ghost btn-sm" id="admin-logout" type="button" hidden>Sign out</button>
     </div>
   </div>
 </header>
 
-<!-- ========================= LOGIN GATE ========================= -->
-<div id="admin-gate">
+<!-- ========================= SIGN-IN GATE ========================= -->
+<main id="admin-gate">
   <div class="gate-card">
-    <div class="gate-eyebrow">Admin Access</div>
+    <p class="eyebrow">Admin access</p>
     <h1 class="gate-title">Sign in to continue</h1>
     <p class="gate-sub">Use your admin account to access the dashboard.</p>
 
@@ -42,105 +39,114 @@
         <label for="gate-pass">Password</label>
         <input id="gate-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
       </div>
-      <span class="gate-err" id="gate-err"></span>
-      <button class="btn btn-primary" id="gate-submit" type="submit">Sign in</button>
+      <span class="gate-err" id="gate-err" role="alert"></span>
+      <button class="btn btn-primary btn-lg" id="gate-submit" type="submit">Sign in</button>
     </form>
   </div>
-</div>
+</main>
 
 <!-- ========================= DASHBOARD ========================= -->
-<div id="admin-dashboard" hidden>
-  <div class="admin-wrap">
+<main id="admin-dashboard" hidden>
+  <div class="admin-container admin-page">
 
-    <!-- Header -->
-    <div class="dash-header">
+    <!-- Page header -->
+    <div class="page-header">
       <div>
-        <div class="dash-eyebrow">Pedagogy Evaluation Platform · Firmin (2020)</div>
-        <h1 class="dash-title">Admin Dashboard</h1>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">
+          <span>Firmin (2020) framework</span>
+          <span class="last-updated" id="last-updated"></span>
+        </p>
       </div>
-      <div class="dash-actions">
-        <span class="last-updated" id="last-updated"></span>
-        <button class="btn btn-secondary" id="admin-refresh">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>
+      <div class="page-actions">
+        <button class="btn btn-ghost" id="admin-refresh" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>
           Refresh
         </button>
-        <button class="btn btn-primary" id="admin-export-csv">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <button class="btn btn-primary" id="admin-export-csv" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
-        <button class="btn btn-danger" id="admin-reset-all" hidden title="Wipes all sessions, responses, and non-admin users. Debug only.">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Reset test data
+        <button class="btn btn-danger-ghost" id="admin-reset-all" type="button" hidden title="Wipes all sessions, responses, and non-admin users. Debug only.">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Reset all test data
         </button>
       </div>
     </div>
 
-    <!-- Stats — participation -->
-    <div class="section-title">Participation</div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Participants</div>
-        <div class="stat-value" id="stat-participants">—</div>
-        <div class="stat-sub" id="stat-participants-sub">everyone on the platform</div>
+    <!-- KPIs — participation -->
+    <section class="kpi-group" aria-labelledby="kpi-participation">
+      <h2 class="kpi-group-title" id="kpi-participation">Participation</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Participants</div>
+          <div class="stat-value" id="stat-participants">—</div>
+          <div class="stat-sub" id="stat-participants-sub">everyone on the platform</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Started survey</div>
+          <div class="stat-value" id="stat-started">—</div>
+          <div class="stat-sub" id="stat-started-sub">opened the assessment</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed survey</div>
+          <div class="stat-value" id="stat-completed">—</div>
+          <div class="stat-sub" id="stat-completed-sub">answered all 20 questions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Accounts created</div>
+          <div class="stat-value" id="stat-accounts">—</div>
+          <div class="stat-sub" id="stat-accounts-sub">registered sign-ups</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Started Survey</div>
-        <div class="stat-value" id="stat-started">—</div>
-        <div class="stat-sub" id="stat-started-sub">opened the assessment</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Completed Survey</div>
-        <div class="stat-value" id="stat-completed">—</div>
-        <div class="stat-sub" id="stat-completed-sub">answered all 20 questions</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Accounts Created</div>
-        <div class="stat-value" id="stat-accounts">—</div>
-        <div class="stat-sub" id="stat-accounts-sub">registered sign-ups</div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Stats — engagement quality -->
-    <div class="section-title">Engagement</div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Completion Rate</div>
-        <div class="stat-value" id="stat-rate">—</div>
-        <div class="stat-sub" id="stat-rate-sub">of those who started</div>
+    <!-- KPIs — engagement -->
+    <section class="kpi-group" aria-labelledby="kpi-engagement">
+      <h2 class="kpi-group-title" id="kpi-engagement">Engagement</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Completion rate</div>
+          <div class="stat-value" id="stat-rate">—</div>
+          <div class="stat-sub" id="stat-rate-sub">of those who started</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">In progress</div>
+          <div class="stat-value" id="stat-inprogress">—</div>
+          <div class="stat-sub">started, not yet finished</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Average score</div>
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-sub" id="stat-avg-sub">across completed assessments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Demographics</div>
+          <div class="stat-value" id="stat-demographics">—</div>
+          <div class="stat-sub" id="stat-demographics-sub">optional details provided</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">In Progress</div>
-        <div class="stat-value" id="stat-inprogress">—</div>
-        <div class="stat-sub">started, not yet finished</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Average Score</div>
-        <div class="stat-value copper" id="stat-avg">—</div>
-        <div class="stat-sub" id="stat-avg-sub">across completed assessments</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Demographics</div>
-        <div class="stat-value" id="stat-demographics">—</div>
-        <div class="stat-sub" id="stat-demographics-sub">optional details provided</div>
-      </div>
-    </div>
+    </section>
 
     <!-- Category results -->
-    <div class="chart-section">
-      <div class="section-title">Category Results · TP / PD / TA / TPP</div>
-      <div class="chart-wrap">
-        <canvas id="admin-chart"></canvas>
+    <section class="panel" aria-labelledby="category-title">
+      <div class="panel-head">
+        <h2 class="panel-title" id="category-title">Category averages</h2>
+        <span class="panel-note">TP · PD · TA · TPP, completed assessments</span>
       </div>
-      <div class="summary-table-wrap">
-        <table class="summary-table" id="category-summary">
+      <div class="chart-wrap">
+        <canvas id="admin-chart" aria-label="Average score by category" role="img"></canvas>
+      </div>
+      <div class="table-scroll summary-table-wrap">
+        <table class="data-table summary-table" id="category-summary">
           <thead>
             <tr>
-              <th>Category</th>
-              <th>Responses</th>
-              <th>Mean</th>
-              <th>Median</th>
-              <th>Lowest</th>
-              <th>Highest</th>
+              <th scope="col">Category</th>
+              <th scope="col" class="num">Responses</th>
+              <th scope="col" class="num">Mean</th>
+              <th scope="col" class="num">Median</th>
+              <th scope="col" class="num">Lowest</th>
+              <th scope="col" class="num">Highest</th>
             </tr>
           </thead>
           <tbody id="category-summary-body">
@@ -148,57 +154,56 @@
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <!-- Demographics -->
-    <div class="chart-section" id="demographics-section">
-      <div class="section-title">
-        Demographic Summary
-        <span class="section-note" id="demographics-note"></span>
+    <section class="panel" id="demographics-section" aria-labelledby="demographics-title">
+      <div class="panel-head">
+        <h2 class="panel-title" id="demographics-title">Demographic summary</h2>
+        <span class="panel-note" id="demographics-note"></span>
       </div>
       <div class="demo-charts">
         <div class="demo-chart-card">
-          <div class="demo-chart-title">Age group</div>
+          <h3 class="demo-chart-title">Age group</h3>
           <div class="demo-chart-wrap"><canvas id="demo-chart-age"></canvas></div>
         </div>
         <div class="demo-chart-card">
-          <div class="demo-chart-title">Gender</div>
+          <h3 class="demo-chart-title">Gender</h3>
           <div class="demo-chart-wrap"><canvas id="demo-chart-gender"></canvas></div>
         </div>
         <div class="demo-chart-card">
-          <div class="demo-chart-title">Academic level</div>
+          <h3 class="demo-chart-title">Academic level</h3>
           <div class="demo-chart-wrap"><canvas id="demo-chart-level"></canvas></div>
         </div>
       </div>
       <div class="demo-empty" id="demographics-empty" hidden></div>
-    </div>
+    </section>
 
-    <!-- Table -->
-    <div class="table-section">
+    <!-- Participants -->
+    <section class="panel panel-flush" aria-labelledby="participants-title">
       <div class="table-toolbar">
-        <div class="table-toolbar-left">
-          <div class="section-title" style="margin-bottom:0;">Participant Sessions</div>
-          <div class="search-wrap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="admin-search" type="text" placeholder="Search name or email…" />
-          </div>
+        <h2 class="panel-title" id="participants-title">Participant sessions</h2>
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <label class="sr-only" for="admin-search">Search participants</label>
+          <input id="admin-search" type="search" placeholder="Search name or email" />
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table class="admin-table">
+      <div class="table-scroll">
+        <table class="data-table admin-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th data-sort="name">Participant</th>
-              <th data-sort="email">Email</th>
-              <th data-sort="tp" title="Teaching Practice" style="text-align:right;">TP</th>
-              <th data-sort="pd" title="Pedagogical Development" style="text-align:right;">PD</th>
-              <th data-sort="ta" title="Technology Adoption" style="text-align:right;">TA</th>
-              <th data-sort="tpp" title="Techno-Pedagogical Practice" style="text-align:right;">TPP</th>
-              <th data-sort="overall" class="sort-desc" style="text-align:right;">Overall</th>
-              <th data-sort="date">Last Activity</th>
-              <th style="text-align:right; cursor:default;" aria-label="Actions"></th>
+              <th scope="col">#</th>
+              <th scope="col" data-sort="name">Participant</th>
+              <th scope="col" data-sort="email">Email</th>
+              <th scope="col" data-sort="tp" class="num" title="Teaching Practice">TP</th>
+              <th scope="col" data-sort="pd" class="num" title="Pedagogical Development">PD</th>
+              <th scope="col" data-sort="ta" class="num" title="Technology Adoption">TA</th>
+              <th scope="col" data-sort="tpp" class="num" title="Techno-Pedagogical Practice">TPP</th>
+              <th scope="col" data-sort="overall" class="num">Overall</th>
+              <th scope="col" data-sort="date" class="sort-desc">Last activity</th>
+              <th scope="col" class="num"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody id="admin-tbody">
@@ -210,39 +215,41 @@
       <div class="table-footer">
         <span id="table-footer-count"></span>
       </div>
-    </div>
+    </section>
 
-  </div><!-- /admin-wrap -->
-</div><!-- /admin-dashboard -->
+  </div>
+</main>
 
-<!-- ========================= SCRIPTS ========================= -->
 <!-- ========================= PARTICIPANT PROFILE MODAL ========================= -->
 <div id="participant-modal" class="pm-backdrop" hidden>
   <div class="pm-card" role="dialog" aria-modal="true" aria-labelledby="pm-title">
-    <button class="pm-close" id="pm-close" type="button" aria-label="Close">×</button>
+    <button class="pm-close" id="pm-close" type="button" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
     <div class="pm-header">
-      <div class="pm-eyebrow">Participant Profile</div>
+      <p class="eyebrow">Participant profile</p>
       <h2 class="pm-name" id="pm-title">—</h2>
       <div class="pm-meta">
         <span class="pm-email" id="pm-email">—</span>
-        <span class="badge-status not-started" id="pm-status">—</span>
-        <span class="badge-anon" id="pm-anon" hidden>anon</span>
+        <span class="badge badge-status not-started" id="pm-status">—</span>
+        <span class="badge badge-anon" id="pm-anon" hidden>Anonymous</span>
       </div>
       <div class="pm-registered-line">Registered <span id="pm-registered">—</span></div>
     </div>
     <div class="pm-body">
-      <div class="section-title" style="margin-bottom:.75rem;">Sessions</div>
+      <h3 class="pm-section-title">Sessions</h3>
       <div id="pm-sessions"></div>
     </div>
   </div>
 </div>
 
+<!-- ========================= SCRIPTS ========================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=1.2"></script>
-<script src="js/session.js?v=1.2"></script>
-<script src="js/questions.js?v=1.2"></script>
-<script src="js/demographic-options.js?v=1.2"></script>
-<script src="js/admin.js?v=1.2"></script>
+<script src="js/supabase.js?v=2.0"></script>
+<script src="js/session.js?v=2.0"></script>
+<script src="js/questions.js?v=2.0"></script>
+<script src="js/demographic-options.js?v=2.0"></script>
+<script src="js/admin.js?v=2.0"></script>
 </body>
 </html>

@@ -27,7 +27,7 @@
   function renderHero(scores) {
     const overall = scoring.overallScore(scores);
     const descriptor = scoring.getDescriptor(overall);
-    $('#overall-num').innerHTML = `${overall}<span class="of">/100</span>`;
+    $('#overall-num').innerHTML = `${overall}<span class="of"> / 100</span>`;
     $('#overall-desc').textContent = descriptor;
     const completedAt = localStorage.getItem('ped.completed');
     if (completedAt) {
@@ -47,43 +47,21 @@
       const score = scores[cat.code] ?? 0;
       const descriptor = scoring.getDescriptor(score);
       const card = document.createElement('article');
-      card.className = `score-card cat-${cat.code.toLowerCase()}`;
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
+      card.className = `score-card cat-${cat.code.toLowerCase()} is-entering`;
       card.innerHTML = `
-        <div class="top">
-          <div>
-            <div class="cat-code">${cat.code}</div>
-            <div class="cat-name">${cat.name}</div>
-          </div>
-          <div class="score-num">${score}<span class="of">/100</span></div>
+        <div class="score-card-head">
+          <span class="cat-code">${cat.code}</span>
+          <span class="score-num">${score}<span class="of"> / 100</span></span>
         </div>
-        <div class="bar-wrap"><div class="bar-fill" data-pct="${score}"></div></div>
+        <h3 class="cat-name">${cat.name}</h3>
+        <div class="bar-wrap" aria-hidden="true"><div class="bar-fill" data-pct="${score}" style="width:${score}%"></div></div>
         <div class="descriptor">${descriptor}</div>
-        <div class="desc-sub">${descriptorSub(score)}</div>
+        <p class="desc-sub">${descriptorSub(score)}</p>
       `;
       grid.appendChild(card);
 
-      // Stagger animate
-      setTimeout(() => {
-        card.style.transition = 'opacity .5s ease, transform .5s ease';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-        // Animate bar fill
-        const bar = card.querySelector('.bar-fill');
-        requestAnimationFrame(() => { bar.style.width = score + '%'; });
-      }, 120 + i * 110);
-    });
-
-    // 3D tilt on score cards
-    document.querySelectorAll('.score-card').forEach(card => {
-      card.addEventListener('mousemove', e => {
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width  - 0.5;
-        const y = (e.clientY - rect.top)  / rect.height - 0.5;
-        card.style.transform = `perspective(700px) rotateY(${x*6}deg) rotateX(${-y*5}deg) translateY(-2px)`;
-      });
-      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+      // Quick staggered fade-in (transition defined in css/results.css)
+      setTimeout(() => card.classList.remove('is-entering'), 40 + i * 60);
     });
   }
 
@@ -99,9 +77,10 @@
     if (!canvas || typeof Chart === 'undefined') return;
     const data = CATEGORIES.map(c => scores[c.code] ?? 0);
     const colors = CATEGORIES.map(c => c.color);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const overall = scoring.overallScore(scores);
-    $('#chart-overall').innerHTML = `${overall}<span class="of">/100</span>`;
+    $('#chart-overall').innerHTML = `${overall}<span class="of"> / 100</span>`;
 
     new Chart(canvas.getContext('2d'), {
       type: 'doughnut',
@@ -110,34 +89,35 @@
         datasets: [{
           data,
           backgroundColor: colors,
-          borderColor: '#0D0B08',
-          borderWidth: 3,
-          hoverOffset: 12,
-          spacing: 2,
+          borderColor: '#FFFFFF',
+          borderWidth: 2,
+          hoverBorderColor: '#FFFFFF',
+          hoverOffset: 6,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '68%',
+        cutout: '70%',
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1C1914',
-            borderColor: '#2A2520',
-            borderWidth: 1,
-            titleFont: { family: 'Poppins', weight: '700', size: 13 },
-            bodyFont:  { family: 'JetBrains Mono', size: 12 },
-            titleColor: '#F5F0E8',
-            bodyColor:  '#F5E6CC',
-            padding: 12,
+            backgroundColor: '#17202C',
+            borderWidth: 0,
+            cornerRadius: 6,
+            titleFont: { family: 'IBM Plex Sans', weight: '600', size: 13 },
+            bodyFont:  { family: 'IBM Plex Mono', size: 12 },
+            titleColor: '#FFFFFF',
+            bodyColor:  '#FFFFFF',
+            padding: 10,
             displayColors: true,
+            boxPadding: 4,
             callbacks: {
               label: (ctx) => ` ${ctx.parsed} / 100`,
             },
           },
         },
-        animation: { animateRotate: true, duration: 1200, easing: 'easeOutCubic' },
+        animation: { duration: reduceMotion ? 0 : 200 },
       },
     });
 
@@ -145,15 +125,13 @@
     const legend = $('#chart-legend');
     legend.innerHTML = '';
     CATEGORIES.forEach(cat => {
-      const row = document.createElement('div');
-      row.className = 'legend-row';
+      const row = document.createElement('li');
+      row.className = `legend-row cat-${cat.code.toLowerCase()}`;
       row.innerHTML = `
-        <span class="swatch" style="background:${cat.color}"></span>
-        <span>
-          <div class="name">${cat.name}</div>
-          <div class="sub">${cat.code}</div>
-        </span>
-        <span class="val">${scores[cat.code]}</span>
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="legend-name">${cat.name}</span>
+        <span class="legend-code">${cat.code}</span>
+        <span class="legend-val">${scores[cat.code] ?? 0}</span>
       `;
       legend.appendChild(row);
     });
@@ -161,13 +139,13 @@
 
   function noResults() {
     $('#results-root').innerHTML = `
-      <section class="container section">
-        <div class="eyebrow" style="margin-bottom:1rem;">No results yet</div>
-        <h1 class="h-1">Complete the assessment first.</h1>
-        <p class="muted" style="max-width:50ch; margin-block: 1rem 2rem;">
+      <section class="container empty-state">
+        <p class="eyebrow">No results yet</p>
+        <h1>Complete the assessment first</h1>
+        <p class="empty-state-text">
           We couldn't find a completed assessment on this device. Head back and run through the 20 questions to see your profile.
         </p>
-        <a class="btn btn-primary btn-lg" href="questionnaire.html">Start assessment →</a>
+        <a class="btn btn-primary btn-lg" href="questionnaire.html">Start assessment</a>
       </section>
     `;
   }

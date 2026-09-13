@@ -46,19 +46,21 @@
   function renderOverview(scores) {
     const overall = scoring.overallScore(scores);
     const descriptor = scoring.getDescriptor(overall);
-    $('#ov-num').innerHTML = `${overall}<span class="of">/100</span>`;
+    $('#ov-num').innerHTML = `${overall}<span class="of"> / 100</span>`;
     $('#ov-desc').textContent = descriptor;
     $('#ov-para').textContent = scoring.getOverviewParagraph(scores);
   }
 
-  function scoreWheel(score) {
+  // Circular score gauge. Strokes are set as attributes so html2canvas
+  // renders them identically in the PDF.
+  function scoreWheel(score, color) {
     const radius = 28, circ = 2 * Math.PI * radius;
     const dash = (score / 100) * circ;
     return `
-      <svg viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="${radius}" stroke="rgba(255,255,255,0.08)" stroke-width="4" fill="none"/>
-        <circle cx="32" cy="32" r="${radius}" stroke="currentColor" stroke-width="4" fill="none"
-                stroke-linecap="round" stroke-dasharray="${dash} ${circ}" />
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="${radius}" stroke="#E4E7EC" stroke-width="5" fill="none"/>
+        <circle cx="32" cy="32" r="${radius}" stroke="${color}" stroke-width="5" fill="none"
+                stroke-linecap="round" stroke-dasharray="${dash} ${circ}" transform="rotate(-90 32 32)" />
       </svg>
       <span class="val">${score}</span>
     `;
@@ -74,16 +76,18 @@
       const card = document.createElement('article');
       card.className = `interp-card cat-${cat.code.toLowerCase()}`;
       card.innerHTML = `
-        <div class="code">${cat.code}</div>
         <div class="body">
-          <h3>${cat.name}</h3>
+          <div class="interp-heading">
+            <span class="code">${cat.code}</span>
+            <h3>${cat.name}</h3>
+          </div>
           <div class="meta">
             <span class="pct">${score} / 100</span>
             <span class="desc">${desc}</span>
           </div>
           <p>${interp}</p>
         </div>
-        <div class="scorewheel" style="color:${cat.accent || cat.color};">${scoreWheel(score)}</div>
+        <div class="scorewheel">${scoreWheel(score, cat.color)}</div>
       `;
       grid.appendChild(card);
     });
@@ -94,7 +98,7 @@
     const wrap = $('#recs');
     wrap.innerHTML = '';
     recs.forEach((r, i) => {
-      const row = document.createElement('div');
+      const row = document.createElement('li');
       row.className = 'rec-row';
       row.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><p>${r}</p>`;
       wrap.appendChild(row);
@@ -115,7 +119,7 @@
     const prevScrollY = window.scrollY;
     window.scrollTo(0, 0);
 
-    // Wait for all fonts (Poppins, JetBrains Mono) to be fully loaded,
+    // Wait for all fonts (IBM Plex Sans, IBM Plex Mono) to be fully loaded,
     // then give the browser one rAF to repaint with is-printing styles applied.
     await document.fonts.ready;
     await new Promise(r => setTimeout(r, 350));
@@ -128,8 +132,8 @@
         logging:         false,
         windowWidth:     900,   // fixed desktop width — avoids mobile reflow
         onclone: (_doc, el) => {
-          // Guarantee Poppins is applied in the cloned document
-          el.style.fontFamily = "'Poppins', Arial, Helvetica, sans-serif";
+          // Guarantee IBM Plex Sans is applied in the cloned document
+          el.style.fontFamily = "'IBM Plex Sans', Arial, Helvetica, sans-serif";
         },
       });
 
@@ -187,13 +191,13 @@
 
   function noResults() {
     $('#report-root').innerHTML = `
-      <section class="report-page">
-        <div class="eyebrow" style="margin-bottom: 1rem;">No assessment found</div>
-        <h1 class="h-1">Complete the assessment to generate your report.</h1>
-        <p class="muted" style="margin: 1rem 0 2rem; max-width: 50ch;">
+      <section class="report-page report-empty">
+        <p class="eyebrow">No assessment found</p>
+        <h1>Complete the assessment to generate your report</h1>
+        <p class="report-empty-text">
           The report draws directly on your responses to the 20-question Firmin (2020) instrument.
         </p>
-        <a class="btn btn-primary btn-lg" href="questionnaire.html">Start assessment →</a>
+        <a class="btn btn-primary btn-lg" href="questionnaire.html">Start assessment</a>
       </section>
     `;
   }

@@ -16,10 +16,16 @@
   const THIS_YEAR  = new Date().getFullYear();
   const SIMILAR_BAND = 2;   // a change of ±2 points or less reads as "stayed similar"
 
-  // Chart colours tuned for the dark ground (category base colours are too dark).
-  const CAT_LINE = { TP: '#7E9CCB', PD: '#B48BC9', TA: '#7FB894', TPP: '#E8A84E' };
-  const ACTIVE_BAR   = '#E8A84E';
-  const BASELINE_BAR = '#6F665A';
+  // Chart.js can't read CSS variables — these mirror the tokens in css/main.css.
+  const CAT_LINE = { TP: '#2F6DB5', PD: '#7A4BA8', TA: '#1E8560', TPP: '#C0480F' };
+  const ACTIVE_BAR   = '#1F5A96';
+  const BASELINE_BAR = '#AEB6C2';
+  const OVERALL_LINE = '#17202C';
+  const CHART_TEXT_2 = '#3F4957';
+  const CHART_MUTED  = '#667080';
+  const CHART_GRID   = '#EEF0F3';
+  const FONT_SANS    = "'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+  const FONT_MONO    = "'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace";
 
   let attempts = [];
   let baselineId = null;
@@ -91,7 +97,7 @@
       <header class="mr-head">
         <div>
           <div class="eyebrow">Dashboard · ${esc(profile?.fullName || profile?.displayName || profile?.email || '')}</div>
-          <h1>Your practice, <span class="italic-accent">over time.</span></h1>
+          <h1>Your practice, over time.</h1>
           <p>Your newest attempt is your active result. We keep up to two attempts a year for 3 years, so you can see
              whether your techno-pedagogical practice is improving.</p>
         </div>
@@ -278,12 +284,18 @@
     maintainAspectRatio: false,
     animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 600 },
     plugins: {
-      legend: { labels: { color: '#F5F0E8', font: { family: 'Poppins' }, boxWidth: 12, usePointStyle: true } },
-      tooltip: { backgroundColor: '#1C1914', borderColor: '#2A2520', borderWidth: 1, titleColor: '#F5F0E8', bodyColor: '#F5E6CC' },
+      legend: { labels: { color: CHART_TEXT_2, font: { family: FONT_SANS, size: 13 }, boxWidth: 10, boxHeight: 10, usePointStyle: true } },
+      tooltip: {
+        backgroundColor: '#17202C', titleColor: '#FFFFFF', bodyColor: '#FFFFFF', borderWidth: 0,
+        padding: 10, cornerRadius: 6, boxPadding: 4,
+        titleFont: { family: FONT_SANS, weight: '600' }, bodyFont: { family: FONT_SANS },
+      },
     },
     scales: {
-      y: { min: 0, max: 100, ticks: { color: '#978E81', stepSize: 20 }, grid: { color: 'rgba(42,37,32,0.8)' } },
-      x: { ticks: { color: '#F5F0E8', font: { family: 'JetBrains Mono' } }, grid: { display: false } },
+      y: { min: 0, max: 100, border: { display: false },
+           ticks: { color: CHART_MUTED, stepSize: 20, font: { family: FONT_MONO, size: 12 } }, grid: { color: CHART_GRID } },
+      x: { border: { color: '#DCE0E6' },
+           ticks: { color: CHART_TEXT_2, font: { family: FONT_MONO, size: 12 } }, grid: { display: false } },
     },
   });
 
@@ -321,7 +333,7 @@
       data: {
         labels: rows.map(r => String(r.year)),
         datasets: [
-          { label: 'Overall', data: rows.map(r => r.overall), borderColor: '#F5F0E8', backgroundColor: '#F5F0E8',
+          { label: 'Overall', data: rows.map(r => r.overall), borderColor: OVERALL_LINE, backgroundColor: OVERALL_LINE,
             borderWidth: 3, pointRadius: 5, tension: 0.25 },
           ...CATEGORIES.map(c => ({
             label: c.name, data: rows.map(r => r.scores[c.code]),

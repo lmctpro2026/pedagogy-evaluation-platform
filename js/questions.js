@@ -7,10 +7,10 @@
 window.PED = window.PED || {};
 
 window.PED.CATEGORIES = [
-  { code: 'TP',  name: 'Teaching Practice',            color: '#2A4A7A', accent: '#BCD0EF' },
-  { code: 'PD',  name: 'Pedagogical Development',      color: '#5A2E6E', accent: '#DCBDED' },
-  { code: 'TA',  name: 'Technology Adoption',          color: '#2A5C44', accent: '#B6DCC4' },
-  { code: 'TPP', name: 'Techno-Pedagogical Practice',  color: '#C17F3A', accent: '#E8A84E' },
+  { code: 'TP',  name: 'Teaching Practice',            color: '#2F6DB5', accent: '#E6EFF9' },
+  { code: 'PD',  name: 'Pedagogical Development',      color: '#7A4BA8', accent: '#F0E9F7' },
+  { code: 'TA',  name: 'Technology Adoption',          color: '#1E8560', accent: '#E4F3ED' },
+  { code: 'TPP', name: 'Techno-Pedagogical Practice',  color: '#C0480F', accent: '#FBEBE2' },
 ];
 
 window.PED.QUESTIONS = [

@@ -1,5 +1,5 @@
 // ===========================================================================
-// Landing page — the answerable first statement in the hero, and page motion.
+// Landing page — the answerable first statement in the hero.
 // The answer is written to ped.responses, so the assessment picks up at 02.
 // ===========================================================================
 
@@ -108,21 +108,6 @@
     }
   }
 
-  function animate() {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!window.gsap || reduced) return;
-    gsap.from('[data-animate]', { opacity: 0, y: 20, duration: 0.6, stagger: 0.08, ease: 'power3.out' });
-    if (window.ScrollTrigger) {
-      gsap.registerPlugin(ScrollTrigger);
-      gsap.utils.toArray('.reveal').forEach(el => {
-        gsap.from(el, {
-          scrollTrigger: { trigger: el, start: 'top 88%' },
-          opacity: 0, y: 24, duration: 0.6, ease: 'power3.out',
-        });
-      });
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     const responses = readResponses();
     $('#try-text').textContent = first.text;
@@ -130,6 +115,5 @@
     renderStrip(responses);
     renderStatus(responses);
     $('#try-continue').addEventListener('click', onContinue);
-    animate();
   });
 })();

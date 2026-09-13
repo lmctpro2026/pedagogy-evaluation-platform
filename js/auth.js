@@ -47,12 +47,12 @@
     t = document.createElement('div');
     t.id = 'ped-toast';
     t.style.cssText = `
-      position:fixed; left:50%; bottom:36px; transform:translate(-50%,24px);
-      background:#1C1914; border:1px solid #2A2520; color:#F5F0E8;
-      padding:.85rem 1.15rem; border-radius:10px; font-family:'Poppins',sans-serif;
-      font-size:.92rem; z-index:10000; opacity:0;
-      transition:opacity .25s ease, transform .25s ease;
-      box-shadow:0 30px 60px -20px rgba(0,0,0,0.65); pointer-events:none;
+      position:fixed; left:50%; bottom:28px; transform:translate(-50%,16px);
+      max-width:min(92vw,480px); background:#17202C; color:#fff;
+      padding:.7rem 1rem; border-radius:8px; font-family:'IBM Plex Sans',system-ui,sans-serif;
+      font-size:.9rem; line-height:1.45; z-index:10000; opacity:0;
+      transition:opacity .2s ease, transform .2s ease;
+      box-shadow:0 8px 24px rgba(23,32,44,.25); pointer-events:none;
     `;
     document.body.appendChild(t);
     return t;
