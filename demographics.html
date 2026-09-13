@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Demographic Information · Pedagogy Evaluation Platform</title>
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/demographics.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <span class="mark">P</span>
+      <span>Pedagogy<span class="muted"> / Evaluation</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="results.html">Skip to results</a>
+    </nav>
+  </div>
+</header>
+
+<main class="demo-shell">
+  <div class="container">
+
+    <div class="demo-head fade-in">
+      <div class="eyebrow">Assessment complete · Optional step</div>
+      <h1>A few details about <span class="italic-accent">you.</span></h1>
+      <p>
+        These three optional questions let Dr Firmin compare techno-pedagogical practice
+        across age groups, genders and academic levels. Your answers are attached to this
+        assessment response only — they are never linked to your name, and
+        <em>Prefer not to say</em> is a valid answer to every question.
+      </p>
+    </div>
+
+    <form class="demo-card fade-in" id="demo-form" novalidate>
+
+      <fieldset class="demo-field" id="field-age">
+        <legend>Age group</legend>
+        <div class="opt-grid" role="radiogroup" aria-label="Age group" data-group="ageGroup"></div>
+        <p class="demo-error" role="alert" hidden></p>
+      </fieldset>
+
+      <fieldset class="demo-field" id="field-gender">
+        <legend>Gender</legend>
+        <div class="opt-grid" role="radiogroup" aria-label="Gender" data-group="gender"></div>
+        <div class="opt-other" id="gender-other-wrap" hidden>
+          <label for="gender-other">Please specify</label>
+          <input type="text" id="gender-other" name="gender-other" maxlength="60"
+                 placeholder="How would you describe your gender?" autocomplete="off" />
+        </div>
+        <p class="demo-error" role="alert" hidden></p>
+      </fieldset>
+
+      <fieldset class="demo-field" id="field-level">
+        <legend>Academic level</legend>
+        <div class="opt-grid levels" role="radiogroup" aria-label="Academic level" data-group="academicLevel"></div>
+        <p class="demo-error" role="alert" hidden></p>
+      </fieldset>
+
+      <div class="demo-summary-error" id="demo-summary-error" role="alert" hidden></div>
+
+      <div class="demo-actions">
+        <button type="button" class="btn btn-ghost btn-lg" id="demo-skip">Skip — go to my results</button>
+        <button type="submit" class="btn btn-primary btn-lg" id="demo-submit">Save and see results →</button>
+      </div>
+
+      <p class="demo-note" id="demo-note"></p>
+    </form>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container legal">
+    <span>© 2026 Federation University Australia · Pedagogy Evaluation Platform</span>
+    <span>Based on Firmin (2020)</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/demographic-options.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/assessment.js"></script>
+<script src="js/demographics.js"></script>
+</body>
+</html>

@@ -75,36 +75,102 @@
       </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats — participation -->
+    <div class="section-title">Participation</div>
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Assessments</div>
-        <div class="stat-value" id="stat-total">—</div>
-        <div class="stat-sub">completed sessions</div>
+        <div class="stat-label">Participants</div>
+        <div class="stat-value" id="stat-participants">—</div>
+        <div class="stat-sub" id="stat-participants-sub">everyone on the platform</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Started Survey</div>
+        <div class="stat-value" id="stat-started">—</div>
+        <div class="stat-sub" id="stat-started-sub">opened the assessment</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed Survey</div>
+        <div class="stat-value" id="stat-completed">—</div>
+        <div class="stat-sub" id="stat-completed-sub">answered all 20 questions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Accounts Created</div>
+        <div class="stat-value" id="stat-accounts">—</div>
+        <div class="stat-sub" id="stat-accounts-sub">registered sign-ups</div>
+      </div>
+    </div>
+
+    <!-- Stats — engagement quality -->
+    <div class="section-title">Engagement</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Completion Rate</div>
+        <div class="stat-value" id="stat-rate">—</div>
+        <div class="stat-sub" id="stat-rate-sub">of those who started</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="stat-inprogress">—</div>
+        <div class="stat-sub">started, not yet finished</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Average Score</div>
         <div class="stat-value copper" id="stat-avg">—</div>
-        <div class="stat-sub">across all participants</div>
+        <div class="stat-sub" id="stat-avg-sub">across completed assessments</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Registered Users</div>
-        <div class="stat-value" id="stat-reg">—</div>
-        <div class="stat-sub" id="stat-reg-sub">registered · anonymous</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Completed Today</div>
-        <div class="stat-value" id="stat-today">—</div>
-        <div class="stat-sub">assessments today</div>
+        <div class="stat-label">Demographics</div>
+        <div class="stat-value" id="stat-demographics">—</div>
+        <div class="stat-sub" id="stat-demographics-sub">optional details provided</div>
       </div>
     </div>
 
-    <!-- Chart -->
+    <!-- Category results -->
     <div class="chart-section">
-      <div class="section-title">Category Averages</div>
+      <div class="section-title">Category Results · TP / PD / TA / TPP</div>
       <div class="chart-wrap">
         <canvas id="admin-chart"></canvas>
       </div>
+      <div class="summary-table-wrap">
+        <table class="summary-table" id="category-summary">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Responses</th>
+              <th>Mean</th>
+              <th>Median</th>
+              <th>Lowest</th>
+              <th>Highest</th>
+            </tr>
+          </thead>
+          <tbody id="category-summary-body">
+            <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Demographics -->
+    <div class="chart-section" id="demographics-section">
+      <div class="section-title">
+        Demographic Summary
+        <span class="section-note" id="demographics-note"></span>
+      </div>
+      <div class="demo-charts">
+        <div class="demo-chart-card">
+          <div class="demo-chart-title">Age group</div>
+          <div class="demo-chart-wrap"><canvas id="demo-chart-age"></canvas></div>
+        </div>
+        <div class="demo-chart-card">
+          <div class="demo-chart-title">Gender</div>
+          <div class="demo-chart-wrap"><canvas id="demo-chart-gender"></canvas></div>
+        </div>
+        <div class="demo-chart-card">
+          <div class="demo-chart-title">Academic level</div>
+          <div class="demo-chart-wrap"><canvas id="demo-chart-level"></canvas></div>
+        </div>
+      </div>
+      <div class="demo-empty" id="demographics-empty" hidden></div>
     </div>
 
     <!-- Table -->
@@ -175,6 +241,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/questions.js"></script>
+<script src="js/demographic-options.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
