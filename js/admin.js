@@ -83,8 +83,7 @@
           if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
           return;
         }
-        // Success — start the idle clock fresh, then reload page
-        window.PED.identity?.markActive();
+        // Success — reload page
         window.location.reload();
       });
     }
@@ -427,8 +426,21 @@
     };
   }
 
+  // Active attempts only. A signed-in participant may keep a previous attempt
+  // alongside the current one in the same year; only the newest counts, so a
+  // participant is never averaged in twice.
   function completedSessions() {
-    return allSessionsCache.filter(s => s.completed_at);
+    const year = iso => new Date(iso).getFullYear();
+    const newestByUserYear = new Map();
+    for (const s of allSessionsCache) {
+      if (!s.completed_at || !s.user_id) continue;
+      const key = `${s.user_id}:${year(s.completed_at)}`;
+      const prev = newestByUserYear.get(key);
+      if (!prev || new Date(s.completed_at) > new Date(prev.completed_at)) newestByUserYear.set(key, s);
+    }
+    return allSessionsCache.filter(s =>
+      s.completed_at && (!s.user_id || newestByUserYear.get(`${s.user_id}:${year(s.completed_at)}`) === s)
+    );
   }
 
   function renderCategorySummary() {

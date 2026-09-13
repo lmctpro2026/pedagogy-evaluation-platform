@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Assessment · Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=1.1" />
-<link rel="stylesheet" href="css/questionnaire.css?v=1.1" />
+<link rel="stylesheet" href="css/main.css?v=1.2" />
+<link rel="stylesheet" href="css/questionnaire.css?v=1.2" />
 </head>
 <body>
 
@@ -27,6 +27,7 @@
       <div class="q-progress-inner">
         <span class="q-progress-label" id="q-section-label">Teaching Practice</span>
         <span class="q-progress-right">
+          <span class="q-timer" id="q-timer" role="timer" aria-label="Time left in this session" hidden>10:00</span>
           <button type="button" class="q-review-link" id="q-review-link" hidden>Review answers</button>
           <span class="q-progress-count"><span class="now" id="q-now">01</span><span class="sep">of</span><span id="q-total">20</span></span>
         </span>
@@ -35,18 +36,19 @@
     </div>
   </div>
 
+  <p class="sr-only" id="q-timer-alert" aria-live="assertive"></p>
   <main class="q-stage container" id="q-stage">
     <!-- Question card injected here -->
   </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js?v=1.1"></script>
-<script src="js/session.js?v=1.1"></script>
-<script src="js/questions.js?v=1.1"></script>
-<script src="js/scoring.js?v=1.1"></script>
-<script src="js/cursor.js?v=1.1"></script>
-<script src="js/assessment.js?v=1.1"></script>
-<script src="js/questionnaire.js?v=1.1"></script>
+<script src="js/supabase.js?v=1.2"></script>
+<script src="js/session.js?v=1.2"></script>
+<script src="js/questions.js?v=1.2"></script>
+<script src="js/scoring.js?v=1.2"></script>
+<script src="js/cursor.js?v=1.2"></script>
+<script src="js/assessment.js?v=1.2"></script>
+<script src="js/questionnaire.js?v=1.2"></script>
 </body>
 </html>

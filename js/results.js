@@ -181,9 +181,8 @@
 
     $('#a-retake')?.addEventListener('click', e => {
       e.preventDefault();
-      const year = new Date().getFullYear();
       if (window.PED.identity?.isRegistered() &&
-          !window.confirm(`Only one result counts per year. Submitting a retake will replace your ${year} result. Continue?`)) {
+          !window.confirm('Start a new 10-minute session?\n\nIf you submit it, the new attempt becomes your active result and this one is kept as your previous attempt (you can delete it from your dashboard).')) {
         return;
       }
       try {

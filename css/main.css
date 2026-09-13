@@ -472,7 +472,15 @@ body.cursor-hidden .cursor-circle { opacity: 0; }
   color: var(--muted);
 }
 
+/* Destructive secondary action */
+.btn-danger-ghost { border-color: rgba(200,74,74,0.55); color: #F6B4B4; background: transparent; }
+.btn-danger-ghost:hover:not(:disabled) { border-color: var(--danger); background: rgba(200,74,74,0.12); color: #FFD4D4; }
+
 /* ---------- Accessibility ---------- */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 :focus-visible {
   outline: 2px solid var(--copper-light);
   outline-offset: 3px;

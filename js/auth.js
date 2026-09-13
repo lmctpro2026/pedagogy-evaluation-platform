@@ -579,11 +579,10 @@
     const signedOut = params.get('signedout');
     if (!signin && !signedOut) return;
 
-    if (signedOut === 'idle')        showToast('You were signed out after 10 minutes of inactivity.', 5000);
-    else if (signedOut === 'manual') showToast('You are signed out.');
+    if (signedOut === 'manual') showToast('You are signed out.');
     if (signin === 'expired')        showToast('Your session ended — please sign in again.', 5000);
 
-    if (signin || signedOut === 'idle') openModal(signin === 'register' ? 'register' : 'signin');
+    if (signin) openModal(signin === 'register' ? 'register' : 'signin');
 
     // Keep ?next, drop the one-off flags so a refresh doesn't repeat them.
     params.delete('signin'); params.delete('signedout');
