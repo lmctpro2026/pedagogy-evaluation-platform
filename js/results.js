@@ -181,6 +181,11 @@
 
     $('#a-retake')?.addEventListener('click', e => {
       e.preventDefault();
+      const year = new Date().getFullYear();
+      if (window.PED.identity?.isRegistered() &&
+          !window.confirm(`Only one result counts per year. Submitting a retake will replace your ${year} result. Continue?`)) {
+        return;
+      }
       try {
         localStorage.removeItem('ped.responses');
         localStorage.removeItem('ped.scores');

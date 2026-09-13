@@ -6,17 +6,22 @@
 (function () {
   const EDGE_FN_PATH = '/functions/v1/send-results-email';
 
-  // Create a session row at the start of an assessment.
-  // Returns the new session UUID (string) or null if offline.
+  const identity = () => window.PED.identity;
+  const isRegistered = () => !!identity()?.isRegistered();
+
+  // Create an in-progress session row when a signed-in participant begins, so
+  // the admin dashboard can see who has started. Anonymous participants get
+  // nothing written until they submit (see completeSession).
+  // Returns the new session UUID (string) or null.
   async function createSession() {
     const sb = window.PED.supabase;
-    if (!sb) return null;
+    if (!sb || !isRegistered()) return null;
     try {
-      const stored  = JSON.parse(localStorage.getItem('ped.session') || 'null');
       const { data: { user } } = await sb.auth.getUser();
+      if (!user || user.is_anonymous) return null;
       const { data, error } = await sb.from('sessions').insert([{
-        user_id:           user?.id || null,
-        participant_email: stored?.email || null,
+        user_id:           user.id,
+        participant_email: user.email || null,
       }]).select('id').single();
       if (error) { console.warn('[assessment] createSession:', error.message); return null; }
       const id = data?.id ?? null;
@@ -28,49 +33,124 @@
     }
   }
 
-  // Update session with final scores + batch-insert all responses.
-  // Then fire the email edge function (non-blocking).
+  // Store a completed assessment: session, scores and all responses in one
+  // transaction via the submit_assessment() database function
+  // (sprint4-attempts.sql). For signed-in users that function also replaces
+  // this year's earlier result. Then fire the email edge function.
   //
-  // Returns true only when the scores AND the responses actually reached the
-  // server, so the caller can tell the participant the truth. supabase-js
-  // reports failures on `error` rather than throwing, so both must be checked —
-  // an RLS rejection would otherwise pass silently.
+  // Resolves { saved, sessionId, replaced, year }. `saved` is true only when
+  // the write actually reached the server, so the caller can tell the
+  // participant the truth.
   async function completeSession(sessionId, responseList, scores) {
     const sb = window.PED.supabase;
-    let saved = false;
+    const result = { saved: false, sessionId: null, replaced: 0, year: null };
 
-    if (sb && sessionId) {
+    if (sb) {
+      const answers = Object.fromEntries(responseList.map(r => [r.question_id, r.answer_value]));
+      const profile = identity()?.current();
       try {
-        const { error: sessionError } = await sb.from('sessions').update({
-          score_tp:     scores.TP,
-          score_pd:     scores.PD,
-          score_ta:     scores.TA,
-          score_tpp:    scores.TPP,
-          completed_at: new Date().toISOString(),
-        }).eq('id', sessionId);
-        if (sessionError) throw sessionError;
-
-        const { error: responsesError } = await sb.from('responses').insert(
-          responseList.map(r => ({
-            session_id:   sessionId,
-            question_id:  r.question_id,
-            category:     r.category,
-            answer_value: r.answer_value,
-          }))
-        );
-        // 23505 = unique_violation → this session's answers are already stored.
-        if (responsesError && responsesError.code !== '23505') throw responsesError;
-
-        saved = true;
+        const { data, error } = await sb.rpc('submit_assessment', {
+          p_responses:         answers,
+          p_session_id:        isRegistered() ? sessionId : null,
+          p_participant_email: profile?.email || null,
+        });
+        if (error) throw error;
+        result.saved     = true;
+        result.sessionId = data?.session_id || null;
+        result.replaced  = data?.replaced || 0;
+        result.year      = data?.year || null;
       } catch (e) {
-        console.warn('[assessment] completeSession failed (non-fatal):', e.message || e);
+        // PGRST202 = function not found → sprint4-attempts.sql not applied yet.
+        if (e?.code === 'PGRST202') {
+          console.warn('[assessment] submit_assessment missing — run sprint4-attempts.sql. Using legacy save.');
+          Object.assign(result, await legacySave(sb, sessionId, responseList, scores));
+        } else {
+          console.warn('[assessment] completeSession failed (non-fatal):', e.message || e);
+        }
       }
     }
 
+    try {
+      if (result.sessionId) sessionStorage.setItem('ped.sessionId', result.sessionId);
+      else sessionStorage.removeItem('ped.sessionId');
+    } catch {}
+
     // Fire-and-forget — the email carries the scores we already hold, so it is
     // still worth sending even if the database write did not land.
-    sendEmailNotifications(sessionId, scores).catch(() => {});
-    return saved;
+    sendEmailNotifications(result.sessionId, scores).catch(() => {});
+    return result;
+  }
+
+  // Pre-Sprint-4 write path, kept so the platform still saves if the migration
+  // has not been run. It cannot enforce the one-result-per-year rule.
+  async function legacySave(sb, sessionId, responseList, scores) {
+    const out = { saved: false, sessionId: null, replaced: 0, year: null };
+    try {
+      const completed = {
+        score_tp: scores.TP, score_pd: scores.PD, score_ta: scores.TA, score_tpp: scores.TPP,
+        completed_at: new Date().toISOString(),
+      };
+      let id = isRegistered() ? sessionId : null;
+      if (id) {
+        const { error } = await sb.from('sessions').update(completed).eq('id', id);
+        if (error) throw error;
+      } else {
+        // Client-generated id: an anonymous caller cannot read the row back.
+        id = crypto.randomUUID();
+        const { error } = await sb.from('sessions').insert([{
+          id, ...completed, participant_email: identity()?.current()?.email || null,
+        }]);
+        if (error) throw error;
+      }
+      const { error: responsesError } = await sb.from('responses').insert(
+        responseList.map(r => ({ session_id: id, ...r }))
+      );
+      // 23505 = unique_violation → this session's answers are already stored.
+      if (responsesError && responsesError.code !== '23505') throw responsesError;
+      out.saved = true;
+      out.sessionId = id;
+    } catch (e) {
+      console.warn('[assessment] legacy save failed (non-fatal):', e.message || e);
+    }
+    return out;
+  }
+
+  // Signed-in user's completed results, newest first, one per year, within
+  // the 3-year retention window. Resolves [] for anonymous/offline.
+  async function getHistory() {
+    const sb = window.PED.supabase;
+    if (!sb || !isRegistered()) return [];
+    try {
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await sb.from('sessions')
+        .select('id, score_tp, score_pd, score_ta, score_tpp, completed_at')
+        .eq('user_id', user.id)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false });
+      if (error) throw error;
+
+      const yearOf = iso => Number(new Intl.DateTimeFormat('en-AU', {
+        year: 'numeric', timeZone: 'Australia/Melbourne',
+      }).format(new Date(iso)));
+      const cutoff = Date.now() - 3 * 365.25 * 24 * 3600 * 1000;
+      const byYear = new Map();
+      for (const s of data || []) {
+        if (new Date(s.completed_at).getTime() < cutoff) continue;
+        const year = yearOf(s.completed_at);
+        if (byYear.has(year)) continue;   // rows are newest first — keep the latest
+        byYear.set(year, {
+          id: s.id,
+          year,
+          completedAt: s.completed_at,
+          scores: { TP: Number(s.score_tp), PD: Number(s.score_pd), TA: Number(s.score_ta), TPP: Number(s.score_tpp) },
+        });
+      }
+      return [...byYear.values()];
+    } catch (e) {
+      console.warn('[assessment] getHistory failed:', e.message || e);
+      return null;   // null = could not load, distinct from "no results"
+    }
   }
 
   // Persist the optional demographics for a completed session.
@@ -146,5 +226,5 @@
   }
 
   window.PED = window.PED || {};
-  window.PED.assessment = { createSession, completeSession, saveDemographics, sendEmailNotifications };
+  window.PED.assessment = { createSession, completeSession, getHistory, saveDemographics, sendEmailNotifications };
 })();
