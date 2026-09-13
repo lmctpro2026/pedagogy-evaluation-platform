@@ -1,14 +1,35 @@
 // ===========================================================================
 // Supabase Edge Function — send-results-email
-// Deploy: supabase functions deploy send-results-email
-// Secret:  supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxx
+//
+// Sends a results summary to the admin and, if they gave an address, to the
+// participant. Only for a real evaluation stored in the last 30 minutes, using
+// the scores in the database (not whatever the caller sends).
+//
+// Deploy:  supabase functions deploy send-results-email --no-verify-jwt
+// Secrets: RESEND_API_KEY   (required)
+//          FROM_EMAIL       e.g. "Pedagogy Evaluation Platform <pep@crmpilot.com.au>"
+//          ADMIN_EMAIL      who gets every new result
+//          SITE_URL         link back to the platform
+// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 // ===========================================================================
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const SALLY_EMAIL    = 'mushfiqurr@students.federation.edu.au';
-const FROM_EMAIL     = 'Pedagogy Platform <onboarding@resend.dev>';
+const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')  ?? 'Pedagogy Evaluation Platform <pep@crmpilot.com.au>';
+const ADMIN_EMAIL    = Deno.env.get('ADMIN_EMAIL') ?? 'mushfiqurr@students.federation.edu.au';
+const SITE_URL       = Deno.env.get('SITE_URL')    ?? 'https://lmctpro2026.github.io/pedagogy-evaluation-platform';
+const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_KEY    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+const MAX_AGE_MS = 30 * 60 * 1000;
+
+const CATEGORIES = [
+  { code: 'TP',  name: 'Teaching Practice',           column: 'score_tp',  color: '#2F6DB5' },
+  { code: 'PD',  name: 'Pedagogical Development',     column: 'score_pd',  color: '#7A4BA8' },
+  { code: 'TA',  name: 'Technology Adoption',         column: 'score_ta',  color: '#1E8560' },
+  { code: 'TPP', name: 'Techno-Pedagogical Practice', column: 'score_tpp', color: '#C0480F' },
+];
 
 const cors = {
   'Access-Control-Allow-Origin':  '*',
@@ -19,109 +40,150 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    const { sessionId, scores, participantEmail, participantName } = await req.json();
+    if (!RESEND_API_KEY) return json({ error: 'Email service not configured.' }, 500);
 
-    if (!RESEND_API_KEY) {
-      console.error('[send-results-email] RESEND_API_KEY not configured');
-      return json({ error: 'Email service not configured.' }, 500);
-    }
+    const { sessionId, participantEmail, participantName } = await req.json();
+    const session = await loadRecentSession(sessionId);
+    if (!session) return json({ error: 'No recent completed evaluation for that session.' }, 404);
 
-    const overall  = ((scores.TP + scores.PD + scores.TA + scores.TPP) / 4).toFixed(1);
-    const scoreRows = [
-      ['Teaching Practice',            'TP',  scores.TP],
-      ['Professional Development',      'PD',  scores.PD],
-      ['Technology Adoption',           'TA',  scores.TA],
-      ['Techno-Pedagogical Practice',   'TPP', scores.TPP],
-    ];
+    const scores = Object.fromEntries(CATEGORIES.map(c => [c.code, Number(session[c.column])]));
+    const overall = Math.round(CATEGORIES.reduce((sum, c) => sum + scores[c.code], 0) / CATEGORIES.length);
+    const name = clean(participantName) || 'Participant';
+    const email = validEmail(participantEmail) ? participantEmail.trim().toLowerCase() : null;
+    const completed = new Date(session.completed_at).toLocaleString('en-AU', {
+      dateStyle: 'medium', timeStyle: 'short', timeZone: 'Australia/Melbourne',
+    });
 
-    const tableHtml = `
-      <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:14px;">
-        <thead>
-          <tr style="background:#1C1914;color:#C17F3A;">
-            <th style="text-align:left;padding:8px 12px;border-bottom:1px solid #2A2520;">Category</th>
-            <th style="text-align:right;padding:8px 12px;border-bottom:1px solid #2A2520;">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${scoreRows.map(([label, , val]) => `
-            <tr>
-              <td style="padding:7px 12px;border-bottom:1px solid #2A2520;">${label}</td>
-              <td style="padding:7px 12px;border-bottom:1px solid #2A2520;text-align:right;font-weight:bold;">${(val as number).toFixed(1)}%</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+    const results = await Promise.allSettled([
+      sendEmail({
+        to: ADMIN_EMAIL,
+        subject: `New evaluation · ${name} · ${overall}/100`,
+        html: layout('New evaluation completed', `
+          ${detailRow('Participant', escapeHtml(name))}
+          ${detailRow('Email', email ? `<a href="mailto:${escapeHtml(email)}" style="color:#1F5A96;">${escapeHtml(email)}</a>` : 'Not provided')}
+          ${detailRow('Completed', completed)}
+          ${detailRow('Session', `<span style="font-family:Menlo,Consolas,monospace;font-size:12px;">${escapeHtml(sessionId)}</span>`)}
+          ${scoreTable(scores, overall)}
+          ${button(`${SITE_URL}/admin.html`, 'Open admin dashboard')}
+        `),
+      }),
+      email ? sendEmail({
+        to: email,
+        subject: `Your Pedagogy Evaluation results · ${overall}/100`,
+        html: layout(`Thanks, ${escapeHtml(name)}`, `
+          <p style="margin:0 0 16px;color:#3F4957;font-size:15px;line-height:1.6;">
+            Here is a summary of your techno-pedagogical practice, scored against the Firmin (2020) framework.
+          </p>
+          ${scoreTable(scores, overall)}
+          <p style="margin:16px 0 0;color:#3F4957;font-size:15px;line-height:1.6;">
+            With an account, your dashboard keeps up to three years of results so you can see how each category changes.
+          </p>
+          ${button(`${SITE_URL}/my-results.html`, 'Open my dashboard')}
+        `),
+      }) : Promise.resolve(),
+    ]);
 
-    const sends: Promise<void>[] = [];
-
-    // Always notify Dr Firmin
-    sends.push(sendEmail({
-      to:      SALLY_EMAIL,
-      subject: `[PEP] New assessment — ${participantName} · ${overall}%`,
-      html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1C1914;">
-          <h2 style="margin-bottom:4px;">New assessment completed</h2>
-          <p style="color:#888;font-size:13px;margin-top:0;">Pedagogy Evaluation Platform · Firmin (2020)</p>
-          <hr style="border:none;border-top:1px solid #E5E0D8;margin:16px 0;">
-          <p><strong>Participant:</strong> ${participantName}</p>
-          ${participantEmail ? `<p><strong>Email:</strong> <a href="mailto:${participantEmail}">${participantEmail}</a></p>` : '<p><em>Anonymous — no email provided</em></p>'}
-          <p><strong>Session ID:</strong> <code style="font-size:12px;">${sessionId ?? 'offline'}</code></p>
-          <p><strong>Overall score:</strong> <span style="font-size:1.2em;font-weight:bold;color:#C17F3A;">${overall}%</span></p>
-          <br>${tableHtml}
-          <p style="color:#888;font-size:12px;margin-top:24px;">Federation University Australia · Research Ethics Approved</p>
-        </div>
-      `,
-    }));
-
-    // Email participant if they supplied an address
-    if (participantEmail && participantEmail.includes('@')) {
-      sends.push(sendEmail({
-        to:      participantEmail,
-        subject: `Your Pedagogy Evaluation results — ${overall}%`,
-        html: `
-          <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1C1914;">
-            <h2>Hi ${participantName},</h2>
-            <p>Thank you for completing the Pedagogy Evaluation. Here is a summary of your results based on the <strong>Firmin (2020)</strong> techno-pedagogical framework.</p>
-            <p style="font-size:1.4em;font-weight:bold;color:#C17F3A;margin:20px 0;">${overall}% overall</p>
-            ${tableHtml}
-            <p style="margin-top:20px;">Your detailed results remain available at the platform — you can retake the assessment at any time.</p>
-            <p style="color:#888;font-size:12px;margin-top:24px;">Pedagogy Evaluation Platform · Federation University Australia<br>Based on Firmin (2020). Results are for reflective purposes only.</p>
-          </div>
-        `,
-      }));
-    }
-
-    await Promise.allSettled(sends);
-    return json({ ok: true, overall });
-
+    const failed = results.filter(r => r.status === 'rejected').length;
+    return json({ ok: failed === 0, sent: results.length - failed, overall }, failed ? 502 : 200);
   } catch (err) {
     console.error('[send-results-email] unhandled error:', err);
-    return json({ error: String(err) }, 500);
+    return json({ error: 'Could not send email.' }, 500);
   }
 });
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Data
 // ---------------------------------------------------------------------------
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...cors, 'Content-Type': 'application/json' },
-  });
+async function loadRecentSession(sessionId: unknown) {
+  if (typeof sessionId !== 'string' || !/^[0-9a-f-]{36}$/i.test(sessionId)) return null;
+  const url = `${SUPABASE_URL}/rest/v1/sessions?id=eq.${sessionId}&select=completed_at,score_tp,score_pd,score_ta,score_tpp`;
+  const res = await fetch(url, { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } });
+  if (!res.ok) return null;
+  const [row] = await res.json();
+  if (!row?.completed_at) return null;
+  if (Date.now() - new Date(row.completed_at).getTime() > MAX_AGE_MS) return null;
+  return row;
 }
 
+// ---------------------------------------------------------------------------
+// Email markup — table layout and inline styles so it renders in Outlook and Gmail.
+// ---------------------------------------------------------------------------
+function layout(heading: string, body: string) {
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#F5F6F8;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F6F8;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #DCE0E6;border-radius:12px;">
+        <tr><td style="padding:20px 28px;border-bottom:1px solid #DCE0E6;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#17202C;">
+          <strong>Pedagogy</strong> <span style="color:#667080;">/ Evaluation</span>
+        </td></tr>
+        <tr><td style="padding:28px;font-family:Arial,Helvetica,sans-serif;color:#17202C;">
+          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:600;">${heading}</h1>
+          ${body}
+        </td></tr>
+        <tr><td style="padding:16px 28px;border-top:1px solid #DCE0E6;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#667080;line-height:1.5;">
+          Pedagogy Evaluation Platform · Federation University Australia · ITECH3208<br>
+          Based on Firmin (2020). Results are for reflective purposes.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table></body></html>`;
+}
+
+function detailRow(label: string, value: string) {
+  return `<p style="margin:0 0 6px;font-size:14px;color:#3F4957;"><span style="display:inline-block;width:92px;color:#667080;">${label}</span>${value}</p>`;
+}
+
+function scoreTable(scores: Record<string, number>, overall: number) {
+  const rows = CATEGORIES.map(c => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #DCE0E6;font-size:14px;color:#17202C;">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c.color};margin-right:8px;"></span>${c.name}
+      </td>
+      <td align="right" style="padding:10px 12px;border-bottom:1px solid #DCE0E6;font-family:Menlo,Consolas,monospace;font-size:14px;color:#17202C;">${scores[c.code]}</td>
+    </tr>`).join('');
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 4px;border:1px solid #DCE0E6;border-radius:8px;border-collapse:separate;">
+      ${rows}
+      <tr>
+        <td style="padding:12px;background:#F0F2F5;font-size:14px;font-weight:bold;color:#17202C;">Overall</td>
+        <td align="right" style="padding:12px;background:#F0F2F5;font-family:Menlo,Consolas,monospace;font-size:16px;font-weight:bold;color:#1F5A96;">${overall} / 100</td>
+      </tr>
+    </table>`;
+}
+
+function button(href: string, label: string) {
+  return `<p style="margin:24px 0 0;"><a href="${href}" style="display:inline-block;background:#1F5A96;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 18px;border-radius:8px;">${label}</a></p>`;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
   const res = await fetch('https://api.resend.com/emails', {
-    method:  'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-    },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${RESEND_API_KEY}` },
     body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
   });
   if (!res.ok) {
     const text = await res.text();
     console.error(`[resend] ${res.status} → ${text}`);
+    throw new Error(`Resend ${res.status}`);
   }
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+}
+
+function clean(value: unknown) {
+  return typeof value === 'string' ? value.trim().slice(0, 80) : '';
+}
+
+function validEmail(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? '').replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 }
