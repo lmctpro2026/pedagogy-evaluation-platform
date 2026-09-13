@@ -6,9 +6,9 @@
 <title>Pedagogy Evaluation Platform — Evaluate your Techno-Pedagogical Practice</title>
 <meta name="description" content="A research-informed self-assessment for educators, based on the Firmin (2020) techno-pedagogical practice framework." />
 
-<link rel="stylesheet" href="css/main.css?v=1.1" />
-<link rel="stylesheet" href="css/landing.css?v=1.1" />
-<link rel="stylesheet" href="css/modal.css?v=1.1" />
+<link rel="stylesheet" href="css/main.css?v=1.2" />
+<link rel="stylesheet" href="css/landing.css?v=1.2" />
+<link rel="stylesheet" href="css/modal.css?v=1.2" />
 </head>
 <body>
 
@@ -31,7 +31,7 @@
         <button type="button" class="btn-signin" data-open-modal="register">Start <span aria-hidden="true">→</span></button>
       </span>
       <span class="nav-actions" data-auth="member">
-        <a href="my-results.html" class="nav-results">My results</a>
+        <a href="my-results.html" class="nav-results">Dashboard</a>
         <button type="button" class="nav-text-btn" data-sign-out>Sign out</button>
       </span>
     </nav>
@@ -59,7 +59,7 @@
       </p>
 
       <p class="hero-facts" data-animate>
-        <span>20 statements</span><span>4 dimensions</span><span>About 5 minutes</span>
+        <span>20 statements</span><span>4 dimensions</span><span>10-minute session</span>
       </p>
 
       <div class="hero-cta" data-animate data-auth="guest">
@@ -76,7 +76,7 @@
           Go to assessment
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
-        <a class="btn btn-ghost btn-lg" href="my-results.html">My results</a>
+        <a class="btn btn-ghost btn-lg" href="my-results.html">My dashboard</a>
         <p class="hero-welcome">Signed in as <strong data-user-name></strong></p>
       </div>
     </div>
@@ -121,10 +121,10 @@
     <li class="howto-card reveal">
       <div class="howto-card-top">
         <span class="howto-num">Step 1</span>
-        <span class="howto-tag">About 5 minutes</span>
+        <span class="howto-tag">10-minute session</span>
       </div>
       <h3>Answer</h3>
-      <p>Rate 20 statements from Strongly Disagree to Strongly Agree. Answers save on your device as you go, and you review them all before submitting.</p>
+      <p>Rate 20 statements from Strongly Disagree to Strongly Agree, then review and submit within your 10-minute session. Nothing is stored until you submit.</p>
     </li>
     <li class="howto-card reveal">
       <div class="howto-card-top">
@@ -140,7 +140,7 @@
         <span class="howto-tag">PDF · APA cited</span>
       </div>
       <h3>Reflect</h3>
-      <p>Read a written report with interpretations and targeted recommendations, export it as a PDF, and — with an account — compare against past years.</p>
+      <p>Read a written report with targeted recommendations, export it as a PDF, and — with an account — track on your dashboard whether each category is improving.</p>
     </li>
   </ol>
 </section>
@@ -160,17 +160,17 @@
       <div class="access-label">With an account</div>
       <h3>Build a record over the years</h3>
       <ul class="access-list">
-        <li>Results are saved to your account</li>
-        <li>One result counts per year — retaking replaces this year's</li>
-        <li>Compare up to 3 years side by side</li>
-        <li>Signs out after 10 minutes without activity</li>
+        <li>A personal dashboard with up to 3 years of results</li>
+        <li>See whether each category improved, decreased or stayed similar</li>
+        <li>Keep a previous attempt to compare — or delete it so only your latest counts</li>
+        <li>Nothing is stored until you submit</li>
       </ul>
       <div class="access-actions" data-auth="guest">
         <button class="btn btn-primary" data-open-modal="register">Create account</button>
         <button class="btn btn-ghost" data-open-modal="signin">Sign in</button>
       </div>
       <div class="access-actions" data-auth="member">
-        <a class="btn btn-primary" href="my-results.html">View my results</a>
+        <a class="btn btn-primary" href="my-results.html">Open my dashboard</a>
       </div>
     </div>
 
@@ -257,11 +257,11 @@
   <dl class="data-grid reveal">
     <div class="data-item">
       <dt>What's stored</dt>
-      <dd>Your 20 answers, the four category scores, and any optional demographics you choose to give. Anonymous attempts are stored only once you submit, without a name.</dd>
+      <dd>Your 20 answers, the four category scores, and any optional demographics you choose to give — stored only when you submit within the 10-minute session. Anonymous attempts are stored without a name.</dd>
     </div>
     <div class="data-item">
       <dt>How long</dt>
-      <dd>Three years, then deleted automatically. With an account, one result is kept per calendar year — a retake replaces that year's result.</dd>
+      <dd>Three years, then deleted automatically. With an account, up to two attempts a year are kept: your newest (active) result and the previous one, which you can delete at any time.</dd>
     </div>
     <div class="data-item">
       <dt>Who can see it</dt>
@@ -320,7 +320,7 @@
       <ul>
         <li><a href="#how">How it works</a></li>
         <li><a href="#data">Your data</a></li>
-        <li><a href="my-results.html">My results</a></li>
+        <li><a href="my-results.html">My dashboard</a></li>
         <li><a href="admin.html">Admin</a></li>
       </ul>
     </div>
@@ -393,7 +393,7 @@
       </div>
       <label class="consent">
         <input id="r-consent" type="checkbox" />
-        <span>I consent to my responses being stored for up to 3 years to generate my report and let me compare results over time. No data is shared with third parties.</span>
+        <span>I consent to my completed evaluations being stored for up to 3 years to generate my report and show my progress over time. No data is shared with third parties.</span>
       </label>
       <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account &amp; begin</button>
       <div class="alt-line">Already registered? <button type="button" data-open-modal="signin">Sign in instead</button></div>
@@ -438,12 +438,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-<script src="js/supabase.js?v=1.1"></script>
-<script src="js/session.js?v=1.1"></script>
-<script src="js/questions.js?v=1.1"></script>
-<script src="js/scoring.js?v=1.1"></script>
-<script src="js/cursor.js?v=1.1"></script>
-<script src="js/auth.js?v=1.1"></script>
-<script src="js/landing.js?v=1.1"></script>
+<script src="js/supabase.js?v=1.2"></script>
+<script src="js/session.js?v=1.2"></script>
+<script src="js/questions.js?v=1.2"></script>
+<script src="js/scoring.js?v=1.2"></script>
+<script src="js/cursor.js?v=1.2"></script>
+<script src="js/auth.js?v=1.2"></script>
+<script src="js/landing.js?v=1.2"></script>
 </body>
 </html>

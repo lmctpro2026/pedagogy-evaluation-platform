@@ -9,41 +9,22 @@
   const identity = () => window.PED.identity;
   const isRegistered = () => !!identity()?.isRegistered();
 
-  // Create an in-progress session row when a signed-in participant begins, so
-  // the admin dashboard can see who has started. Anonymous participants get
-  // nothing written until they submit (see completeSession).
-  // Returns the new session UUID (string) or null.
-  async function createSession() {
-    const sb = window.PED.supabase;
-    if (!sb || !isRegistered()) return null;
-    try {
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user || user.is_anonymous) return null;
-      const { data, error } = await sb.from('sessions').insert([{
-        user_id:           user.id,
-        participant_email: user.email || null,
-      }]).select('id').single();
-      if (error) { console.warn('[assessment] createSession:', error.message); return null; }
-      const id = data?.id ?? null;
-      if (id) { try { sessionStorage.setItem('ped.sessionId', id); } catch {} }
-      return id;
-    } catch (e) {
-      console.warn('[assessment] createSession error (non-fatal):', e);
-      return null;
-    }
-  }
-
-  // Store a completed assessment: session, scores and all responses in one
-  // transaction via the submit_assessment() database function
-  // (sprint4-attempts.sql). For signed-in users that function also replaces
-  // this year's earlier result. Then fire the email edge function.
+  // Nothing is written while an evaluation is in progress — for anonymous and
+  // signed-in participants alike. completeSession() is the first and only write.
   //
-  // Resolves { saved, sessionId, replaced, year }. `saved` is true only when
-  // the write actually reached the server, so the caller can tell the
+  // It stores the session, scores and all responses in one transaction via the
+  // submit_assessment() database function (sprint4-attempts.sql), which also
+  // enforces the 10-minute session and the two-attempts-per-year rule.
+  //
+  //   options.startedAt        ISO time the 10-minute session began (required)
+  //   options.replacePrevious  signed-in: delete this year's earlier attempt(s)
+  //
+  // Resolves { saved, expired, sessionId, previousId, removed, year }. `saved`
+  // is true only when the write reached the server, so the caller can tell the
   // participant the truth.
-  async function completeSession(sessionId, responseList, scores) {
+  async function completeSession(responseList, scores, options = {}) {
     const sb = window.PED.supabase;
-    const result = { saved: false, sessionId: null, replaced: 0, year: null };
+    const result = { saved: false, expired: false, sessionId: null, previousId: null, removed: 0, year: null };
 
     if (sb) {
       const answers = Object.fromEntries(responseList.map(r => [r.question_id, r.answer_value]));
@@ -51,19 +32,23 @@
       try {
         const { data, error } = await sb.rpc('submit_assessment', {
           p_responses:         answers,
-          p_session_id:        isRegistered() ? sessionId : null,
+          p_started_at:        options.startedAt,
+          p_replace_previous:  !!options.replacePrevious && isRegistered(),
           p_participant_email: profile?.email || null,
         });
         if (error) throw error;
-        result.saved     = true;
-        result.sessionId = data?.session_id || null;
-        result.replaced  = data?.replaced || 0;
-        result.year      = data?.year || null;
+        result.saved      = true;
+        result.sessionId  = data?.session_id || null;
+        result.previousId = data?.previous_id || null;
+        result.removed    = data?.removed || 0;
+        result.year       = data?.year || null;
       } catch (e) {
-        // PGRST202 = function not found → sprint4-attempts.sql not applied yet.
-        if (e?.code === 'PGRST202') {
+        if (/SESSION_EXPIRED/.test(e?.message || '')) {
+          result.expired = true;
+        } else if (e?.code === 'PGRST202') {
+          // Function not found → sprint4-attempts.sql not applied yet.
           console.warn('[assessment] submit_assessment missing — run sprint4-attempts.sql. Using legacy save.');
-          Object.assign(result, await legacySave(sb, sessionId, responseList, scores));
+          Object.assign(result, await legacySave(sb, responseList, scores));
         } else {
           console.warn('[assessment] completeSession failed (non-fatal):', e.message || e);
         }
@@ -75,37 +60,33 @@
       else sessionStorage.removeItem('ped.sessionId');
     } catch {}
 
-    // Fire-and-forget — the email carries the scores we already hold, so it is
-    // still worth sending even if the database write did not land.
-    sendEmailNotifications(result.sessionId, scores).catch(() => {});
+    // An expired session is not an evaluation — don't email it.
+    if (!result.expired) sendEmailNotifications(result.sessionId, scores).catch(() => {});
     return result;
   }
 
   // Pre-Sprint-4 write path, kept so the platform still saves if the migration
-  // has not been run. It cannot enforce the one-result-per-year rule.
-  async function legacySave(sb, sessionId, responseList, scores) {
-    const out = { saved: false, sessionId: null, replaced: 0, year: null };
+  // has not been run. It cannot enforce the attempt or session-time rules.
+  async function legacySave(sb, responseList, scores) {
+    const out = { saved: false, sessionId: null };
     try {
-      const completed = {
+      let userId = null;
+      if (isRegistered()) {
+        const { data: { user } } = await sb.auth.getUser();
+        userId = user?.id || null;
+      }
+      // Client-generated id: an anonymous caller cannot read the row back.
+      const id = crypto.randomUUID();
+      const { error } = await sb.from('sessions').insert([{
+        id, user_id: userId,
+        participant_email: identity()?.current()?.email || null,
         score_tp: scores.TP, score_pd: scores.PD, score_ta: scores.TA, score_tpp: scores.TPP,
         completed_at: new Date().toISOString(),
-      };
-      let id = isRegistered() ? sessionId : null;
-      if (id) {
-        const { error } = await sb.from('sessions').update(completed).eq('id', id);
-        if (error) throw error;
-      } else {
-        // Client-generated id: an anonymous caller cannot read the row back.
-        id = crypto.randomUUID();
-        const { error } = await sb.from('sessions').insert([{
-          id, ...completed, participant_email: identity()?.current()?.email || null,
-        }]);
-        if (error) throw error;
-      }
+      }]);
+      if (error) throw error;
       const { error: responsesError } = await sb.from('responses').insert(
         responseList.map(r => ({ session_id: id, ...r }))
       );
-      // 23505 = unique_violation → this session's answers are already stored.
       if (responsesError && responsesError.code !== '23505') throw responsesError;
       out.saved = true;
       out.sessionId = id;
@@ -115,41 +96,64 @@
     return out;
   }
 
-  // Signed-in user's completed results, newest first, one per year, within
-  // the 3-year retention window. Resolves [] for anonymous/offline.
-  async function getHistory() {
+  const yearOf = iso => Number(new Intl.DateTimeFormat('en-AU', {
+    year: 'numeric', timeZone: 'Australia/Melbourne',
+  }).format(new Date(iso)));
+
+  // Every stored attempt for the signed-in user within the 3-year window,
+  // newest first. The newest attempt is the active result; within each year the
+  // newest attempt is that year's result and any other is the "previous" one.
+  //   [{ id, year, completedAt, startedAt, scores, overall, isActive, isYearResult }]
+  // Resolves [] for anonymous/offline and null when the request failed.
+  async function getAttempts() {
     const sb = window.PED.supabase;
     if (!sb || !isRegistered()) return [];
     try {
       const { data: { user } } = await sb.auth.getUser();
       if (!user) return [];
       const { data, error } = await sb.from('sessions')
-        .select('id, score_tp, score_pd, score_ta, score_tpp, completed_at')
+        .select('id, score_tp, score_pd, score_ta, score_tpp, created_at, completed_at')
         .eq('user_id', user.id)
         .not('completed_at', 'is', null)
+        .gte('completed_at', new Date(Date.now() - 3 * 365.25 * 24 * 3600 * 1000).toISOString())
         .order('completed_at', { ascending: false });
       if (error) throw error;
 
-      const yearOf = iso => Number(new Intl.DateTimeFormat('en-AU', {
-        year: 'numeric', timeZone: 'Australia/Melbourne',
-      }).format(new Date(iso)));
-      const cutoff = Date.now() - 3 * 365.25 * 24 * 3600 * 1000;
-      const byYear = new Map();
-      for (const s of data || []) {
-        if (new Date(s.completed_at).getTime() < cutoff) continue;
+      const seenYears = new Set();
+      return (data || []).map((s, i) => {
         const year = yearOf(s.completed_at);
-        if (byYear.has(year)) continue;   // rows are newest first — keep the latest
-        byYear.set(year, {
-          id: s.id,
-          year,
+        const scores = { TP: Number(s.score_tp), PD: Number(s.score_pd), TA: Number(s.score_ta), TPP: Number(s.score_tpp) };
+        const isYearResult = !seenYears.has(year);
+        seenYears.add(year);
+        return {
+          id: s.id, year, scores,
+          overall: window.PED.scoring.overallScore(scores),
           completedAt: s.completed_at,
-          scores: { TP: Number(s.score_tp), PD: Number(s.score_pd), TA: Number(s.score_ta), TPP: Number(s.score_tpp) },
-        });
-      }
-      return [...byYear.values()];
+          startedAt: s.created_at,
+          isActive: i === 0,
+          isYearResult,
+        };
+      });
     } catch (e) {
-      console.warn('[assessment] getHistory failed:', e.message || e);
-      return null;   // null = could not load, distinct from "no results"
+      console.warn('[assessment] getAttempts failed:', e.message || e);
+      return null;
+    }
+  }
+
+  // Delete one of the signed-in user's earlier attempts. The server refuses to
+  // delete the newest (active) attempt. Resolves { ok, message }.
+  async function deletePreviousAttempt(sessionId) {
+    const sb = window.PED.supabase;
+    if (!sb || !sessionId) return { ok: false, message: 'Not connected.' };
+    try {
+      const { error } = await sb.rpc('delete_previous_attempt', { p_session_id: sessionId });
+      if (error) throw error;
+      return { ok: true };
+    } catch (e) {
+      const message = e?.code === 'PGRST202'
+        ? 'Deleting attempts needs the Sprint 4 database update.'
+        : (e?.message || 'Could not delete the attempt.');
+      return { ok: false, message };
     }
   }
 
@@ -226,5 +230,5 @@
   }
 
   window.PED = window.PED || {};
-  window.PED.assessment = { createSession, completeSession, getHistory, saveDemographics, sendEmailNotifications };
+  window.PED.assessment = { completeSession, getAttempts, deletePreviousAttempt, saveDemographics, sendEmailNotifications };
 })();

@@ -524,3 +524,64 @@
 }
 .q-rule strong { color: var(--copper-light); }
 .q-rule a { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+
+/* ---------- 10-minute session ---------- */
+.q-timer {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  padding: .28rem .7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--cream);
+  transition: color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+}
+.q-timer::before {
+  content: ''; width: 7px; height: 7px; border-radius: 999px; background: var(--success);
+}
+.q-timer.is-warn   { color: var(--copper-light); border-color: rgba(232,168,78,0.6); background: rgba(193,127,58,0.1); }
+.q-timer.is-warn::before { background: var(--copper-light); }
+.q-timer.is-danger { color: #F6B4B4; border-color: rgba(200,74,74,0.7); background: rgba(200,74,74,0.14); }
+.q-timer.is-danger::before { background: var(--danger); animation: timer-pulse 1s ease-in-out infinite; }
+@keyframes timer-pulse { 50% { opacity: .25; } }
+
+.q-session-note {
+  display: flex; align-items: center; justify-content: center; gap: .5rem; flex-wrap: wrap;
+  color: rgba(245,240,232,0.8) !important;
+  margin-bottom: 1.25rem !important;
+}
+.q-session-note svg { color: var(--copper-light); flex: none; }
+.q-session-note strong { color: var(--cream); }
+
+.q-expired .expired-icon {
+  width: 64px; height: 64px; margin: 0 auto 1.25rem;
+  display: grid; place-items: center; border-radius: 999px;
+  color: #F6B4B4; background: rgba(200,74,74,0.12); border: 1px solid rgba(200,74,74,0.45);
+}
+.expired-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.75rem; }
+
+/* ---------- Two attempts choice (completion screen) ---------- */
+.attempt-card {
+  max-width: 660px;
+  margin: 2rem auto 0;
+  padding: clamp(1.25rem, 3vw, 1.9rem);
+  text-align: left;
+  border: 1px solid rgba(193,127,58,0.45);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, rgba(193,127,58,0.1), var(--surface) 60%);
+}
+.attempt-card .eyebrow { color: var(--copper-light); margin-bottom: .6rem; }
+.attempt-card h2 { font-size: clamp(1.2rem, 2.4vw, 1.55rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: .6rem; }
+.q-done .attempt-card p { color: rgba(245,240,232,0.78); max-width: none; margin: 0 0 1.25rem; font-size: .95rem; }
+.attempt-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.q-done .attempt-card .attempt-status { margin: 1rem 0 0; font-size: .9rem; color: var(--cream); }
+.attempt-status:empty { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .q-timer.is-danger::before { animation: none; }
+}
+@media (max-width: 760px) {
+  .q-timer { font-size: .75rem; padding: .22rem .55rem; }
+  .attempt-actions .btn, .expired-actions .btn { width: 100%; }
+}

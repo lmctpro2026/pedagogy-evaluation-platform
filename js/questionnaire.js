@@ -277,6 +277,7 @@
   // The single completion gate: nothing is scored, stored or sent unless all
   // 20 questions carry a valid 1–5 answer.
   function submitAssessment() {
+    if (evalSession.isExpired()) return expireSession();
     const missing = missingQuestions();
     const errEl = $('#review-error');
 
@@ -311,6 +312,8 @@
     if (missingQuestions().length) return showReview();
 
     const completedAt = new Date().toISOString();
+    const startedAt = evalSession.startedAt() || completedAt;
+    stopTimer();
 
     // Build enriched response list (includes category for the responses table)
     const responseList = QUESTIONS.map(q => ({
@@ -323,21 +326,32 @@
     const scores = window.PED.scoring.calculateScores(responseList, QUESTIONS);
     try { localStorage.setItem('ped.scores', JSON.stringify(scores)); } catch {}
     try { localStorage.setItem('ped.completed', completedAt); } catch {}
+    // This session is over — its answers are captured above. Clearing them means
+    // the next visit starts a fresh 10-minute session instead of resubmitting.
+    try { localStorage.removeItem(STORAGE_RESP); } catch {}
+    responses = {};
 
     // Show the completion screen immediately — but hold the buttons that
     // navigate away until the session write has settled, otherwise leaving the
     // page can abort the in-flight scores/responses insert.
     showDone();
 
-    const sessionId = sessionStorage.getItem('ped.sessionId') || null;
     const notSaved = { saved: false };
     const write = window.PED.assessment
-      ? window.PED.assessment.completeSession(sessionId, responseList, scores).catch(() => notSaved)
+      ? window.PED.assessment.completeSession(responseList, scores, { startedAt }).catch(() => notSaved)
       : Promise.resolve(notSaved);
 
     // Never trap the participant behind a hung request.
     const result = await Promise.race([write, new Promise(r => setTimeout(() => r(notSaved), 8000))]);
+    evalSession.clear();
+
+    if (result.expired) {
+      // The server's clock says the 10 minutes ran out before submission.
+      try { ['ped.scores', 'ped.completed'].forEach(k => localStorage.removeItem(k)); } catch {}
+      return showExpired();
+    }
     releaseDoneScreen(result);
+    if (result.saved && result.previousId) offerPreviousAttemptChoice(result);
   }
 
   // ---------- Completion + optional demographics ----------
@@ -351,6 +365,8 @@
         </div>
         <h1>All done. Your profile is ready.</h1>
         <p>Weighted scores have been calculated across the four Firmin (2020) categories.</p>
+
+        <div id="attempt-choice"></div>
 
         <div class="consent-card">
           <div class="consent-head">
@@ -419,13 +435,135 @@
     if (!result.saved) {
       msg = '<span class="warn" aria-hidden="true">!</span> Saved on this device only — we could not reach the server.';
     } else if (window.PED.identity?.isRegistered()) {
-      msg = result.replaced
-        ? `<span class="tick" aria-hidden="true">✓</span> Saved as your ${result.year} result — it replaces your earlier ${result.year} attempt.`
-        : `<span class="tick" aria-hidden="true">✓</span> Saved as your ${result.year || new Date().getFullYear()} result.`;
+      msg = `<span class="tick" aria-hidden="true">✓</span> Saved — this is now your active ${result.year || new Date().getFullYear()} result.`;
     } else {
       msg = '<span class="tick" aria-hidden="true">✓</span> Your results are saved anonymously.';
     }
     setConsentStatus(msg);
+  }
+
+  // ---------- Two attempts: keep or delete the previous one ----------
+  async function offerPreviousAttemptChoice(result) {
+    const slot = $('#attempt-choice');
+    if (!slot) return;
+    const attempts = await window.PED.assessment.getAttempts();
+    const prev = (attempts || []).find(a => a.id === result.previousId);
+    const when = prev ? new Date(prev.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long' }) : '';
+    const current = (attempts || []).find(a => a.id === result.sessionId);
+
+    slot.innerHTML = `
+      <div class="attempt-card fade-in" role="region" aria-labelledby="attempt-title">
+        <div class="eyebrow">Two ${result.year} attempts</div>
+        <h2 id="attempt-title">Keep your previous attempt?</h2>
+        <p>This attempt${current ? ` (${current.overall}/100)` : ''} is now your active result.
+           Your previous attempt${prev ? ` from ${when} (${prev.overall}/100)` : ''} is kept so you can compare them —
+           or delete it so only this attempt counts.</p>
+        <div class="attempt-actions">
+          <button type="button" class="btn btn-ghost" id="attempt-keep">Keep both</button>
+          <button type="button" class="btn btn-danger-ghost" id="attempt-delete">Delete previous attempt</button>
+        </div>
+        <p class="attempt-status" id="attempt-status" aria-live="polite"></p>
+      </div>`;
+
+    const status = $('#attempt-status');
+    $('#attempt-keep').addEventListener('click', () => {
+      slot.querySelector('.attempt-actions').remove();
+      status.innerHTML = 'Both attempts kept. <a href="my-results.html">Compare them on your dashboard →</a>';
+    });
+    $('#attempt-delete').addEventListener('click', async e => {
+      if (!window.confirm('Delete your previous attempt? Only this attempt will be kept. This can’t be undone.')) return;
+      e.currentTarget.disabled = true;
+      $('#attempt-keep').disabled = true;
+      status.textContent = 'Deleting…';
+      const out = await window.PED.assessment.deletePreviousAttempt(result.previousId);
+      if (out.ok) {
+        slot.querySelector('.attempt-actions').remove();
+        status.textContent = 'Previous attempt deleted — this attempt is now your only result for the year.';
+      } else {
+        e.currentTarget.disabled = false;
+        $('#attempt-keep').disabled = false;
+        status.textContent = out.message;
+      }
+    });
+  }
+
+  // ---------- 10-minute session ----------
+  const evalSession = window.PED.evalSession;
+  let timerHandle = null;
+  let announced = { 120: false, 60: false };
+
+  function fmtClock(ms) {
+    const total = Math.ceil(ms / 1000);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+
+  function startTimer() {
+    evalSession.start();
+    const el = $('#q-timer');
+    el.hidden = false;
+    announced = { 120: false, 60: false };
+    clearInterval(timerHandle);
+    const tick = () => {
+      const left = evalSession.remainingMs();
+      if (left === null) return stopTimer();
+      if (left <= 0) return expireSession();
+      el.textContent = fmtClock(left);
+      el.classList.toggle('is-warn',   left <= 120000 && left > 60000);
+      el.classList.toggle('is-danger', left <= 60000);
+      for (const mark of [120, 60]) {
+        if (!announced[mark] && left <= mark * 1000) {
+          announced[mark] = true;
+          $('#q-timer-alert').textContent = `${mark / 60} minute${mark === 60 ? '' : 's'} left in this session.`;
+          window.PED.toast?.(`${mark / 60} minute${mark === 60 ? '' : 's'} left — submit before the session ends.`);
+        }
+      }
+    };
+    tick();
+    timerHandle = setInterval(tick, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerHandle);
+    timerHandle = null;
+    const el = $('#q-timer');
+    if (el) { el.hidden = true; el.classList.remove('is-warn', 'is-danger'); }
+  }
+
+  // Time ran out before submission: nothing is stored, and the unsubmitted
+  // answers are cleared from this device.
+  function expireSession() {
+    stopTimer();
+    evalSession.clear();
+    responses = {};
+    try { localStorage.removeItem(STORAGE_RESP); } catch {}
+    showExpired();
+  }
+
+  function showExpired() {
+    const stage = $('#q-stage');
+    currentCard = null;
+    setReviewLink(false);
+    $('#q-bar-fill').style.width = '0%';
+    $('#q-now').textContent = '00';
+    $('#q-section-label').textContent = 'Session expired';
+    stage.innerHTML = `
+      <div class="q-welcome q-expired fade-in" role="alert">
+        <div class="expired-icon" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
+        </div>
+        <div class="eyebrow" style="margin-bottom:1rem;">Session expired</div>
+        <h1>Your 10 minutes <span class="italic-accent">ran out.</span></h1>
+        <p>The session ended before you submitted, so nothing from it was stored and your answers
+           have been cleared from this device.</p>
+        <div class="expired-actions">
+          <button class="btn btn-primary btn-lg" id="q-new-session">Start a new session →</button>
+          <a class="btn btn-ghost btn-lg" href="index.html">Back to home</a>
+        </div>
+      </div>`;
+    $('#q-new-session').addEventListener('click', () => {
+      startTimer();
+      openQuestion(0, { fromReview: false });
+    });
   }
 
   // ---------- Welcome / resume / start ----------
@@ -434,55 +572,68 @@
   }
 
   // What happens to this attempt, in the participant's terms.
-  function attemptNoteHtml(session, history) {
+  function attemptNoteHtml(session, attempts) {
     const year = new Date().getFullYear();
     if (!window.PED.identity?.isRegistered(session)) {
-      return `<p class="q-rule">Anonymous — nothing is stored until you submit. Then your answers are saved without your name.
-              <a href="index.html?signin=register">Create an account</a> to keep results and compare years.</p>`;
+      return `<p class="q-rule">Anonymous — nothing is stored while you answer. Your responses are saved, without your name,
+              only when you submit. <a href="index.html?signin=register">Create an account</a> to track progress over the years.</p>`;
     }
-    const thisYear = (history || []).find(h => h.year === year);
-    if (thisYear) {
-      const when = new Date(thisYear.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
-      const overall = window.PED.scoring.overallScore(thisYear.scores);
-      return `<p class="q-rule">You already have a ${year} result (${overall}/100, ${when}). Submitting again
-              <strong>replaces it</strong> — results from earlier years are kept. <a href="my-results.html">See my results</a></p>`;
+    const fmt = a => `${a.overall}/100, ${new Date(a.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+    const thisYear = (attempts || []).filter(a => a.year === year);
+    if (thisYear.length >= 2) {
+      return `<p class="q-rule">You have two ${year} attempts. If you submit a new one, it becomes your active result,
+              your latest attempt (${fmt(thisYear[0])}) is kept as the previous one, and your oldest
+              (${fmt(thisYear[1])}) is removed. <a href="my-results.html">Open dashboard</a></p>`;
     }
-    return `<p class="q-rule">Signed in — this will be saved as your ${year} result. One result counts per year, and we keep up to 3 years so you can compare.</p>`;
+    if (thisYear.length === 1) {
+      return `<p class="q-rule">You already have a ${year} attempt (${fmt(thisYear[0])}). A new attempt becomes your
+              <strong>active result</strong>; the earlier one is kept as your previous attempt, and you can delete it afterwards.
+              <a href="my-results.html">Open dashboard</a></p>`;
+    }
+    return `<p class="q-rule">Signed in — this becomes your ${year} result. We keep up to 3 years of results so you can track your progress.</p>`;
   }
 
-  function showWelcome(history) {
+  function showWelcome(attempts) {
     const session = JSON.parse(localStorage.getItem(STORAGE_SESS) || 'null');
     const name = session?.displayName || 'there';
     const answered = answeredCount();
+    const left = evalSession.remainingMs();          // null = no session running
+    const running = left !== null && left > 0;
 
     const stage = $('#q-stage');
     currentCard = null;
     stage.innerHTML = `
       <div class="q-welcome fade-in">
         <div class="eyebrow" style="margin-bottom:1.25rem;">Welcome${name === 'there' ? '' : ','} ${escapeHtml(name)}</div>
-        <h1>Twenty questions. <span class="italic-accent">Five minutes.</span></h1>
+        <h1>Twenty questions. <span class="italic-accent">Ten minutes.</span></h1>
         <p>Answer each statement on a five-point scale, from Strongly Disagree to Strongly Agree. There are no right answers — this is a reflective profile.</p>
-        <p class="muted" style="margin-bottom:1.5rem;">All ${total} questions must be answered before your results can be calculated.</p>
+        <p class="q-session-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
+          ${running
+            ? `Your session is running — <strong>${fmtClock(left)} left</strong>.`
+            : 'You have <strong>10 minutes</strong> once you begin. If time runs out before you submit, the session ends and nothing is saved.'}
+        </p>
         ${answered > 0 ? `<p class="muted" style="margin-bottom:1.5rem;">You've already answered ${answered} of ${total} — pick up where you left off.</p>` : ''}
-        ${attemptNoteHtml(session, history)}
+        ${attemptNoteHtml(session, attempts)}
         <div style="display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap;">
-          <button class="btn btn-primary btn-lg" id="q-begin">${answered > 0 ? 'Resume assessment' : 'Begin assessment'} →</button>
+          <button class="btn btn-primary btn-lg" id="q-begin">${answered > 0 || running ? 'Resume session' : 'Start 10-minute session'} →</button>
           ${answered > 0 ? `<button class="btn btn-ghost btn-lg" id="q-restart">Start over</button>` : ''}
         </div>
       </div>
     `;
 
     $('#q-begin').addEventListener('click', () => {
-      // Create a session row in Supabase (non-blocking) so responses can reference it
-      if (window.PED.assessment) window.PED.assessment.createSession().catch(() => {});
+      startTimer();
       const firstUnanswered = QUESTIONS.findIndex(q => !isAnswered(q));
-      openQuestion(firstUnanswered === -1 ? 0 : firstUnanswered, { fromReview: false });
+      if (firstUnanswered === -1) return showReview();
+      openQuestion(firstUnanswered, { fromReview: false });
     });
     const restart = $('#q-restart');
     if (restart) restart.addEventListener('click', () => {
       responses = {};
       try { localStorage.removeItem(STORAGE_RESP); } catch {}
-      if (window.PED.assessment) window.PED.assessment.createSession().catch(() => {});
+      evalSession.clear();
+      startTimer();
       openQuestion(0, { fromReview: false });
     });
   }
@@ -513,12 +664,15 @@
       try { responses = JSON.parse(localStorage.getItem(STORAGE_RESP) || '{}') || {}; } catch { responses = {}; }
     }
 
-    let history = [];
+    // A session that ran out while the participant was away.
+    if (evalSession.isExpired()) return expireSession();
+
+    let attempts = [];
     if (identity?.isRegistered() && window.PED.supabase) {
       const user = await identity.requireAccount();
       if (!user) return;   // redirecting to sign in
-      history = await window.PED.assessment.getHistory();
+      attempts = await window.PED.assessment.getAttempts();
     }
-    showWelcome(history);
+    showWelcome(attempts);
   });
 })();
