@@ -38,3 +38,12 @@ supabase/.branches/
 
 # Local handover notes — contains live API keys, CLI tokens, admin password
 MASTER_CONTEXT.md
+
+# Sprint reports and presentation material (kept local, not published)
+PEP_Sprint*_Report*
+SPRINT*_*
+PRESENTATION_SCRIPT*
+DEMO_SCRIPT*
+build-slides.js
+md2pdf.py
+stamp_page_numbers.py
