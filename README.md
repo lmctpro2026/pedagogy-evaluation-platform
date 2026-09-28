@@ -117,7 +117,9 @@ Run these in the Supabase SQL Editor, in order. Each is idempotent.
 | 1 | `supabase-setup.sql` | Base schema — users, questions, sessions, responses, RLS |
 | 2 | `admin-policies.sql` | Lets admin accounts read all rows |
 | 3 | `sprint3-demographics.sql` | Sprint 3 demographics table and its policies |
-| 4 | `demo-seed.sql` | *Optional* — eight fictional participants for demonstrations |
+| 4 | `sprint4-attempts.sql` | Sprint 4 — store on completion, 10-minute sessions, two attempts a year |
+| 5 | `sprint5-claim.sql` | Sprint 5 — save an anonymous result to an account |
+| 6 | `demo-seed.sql` | *Optional* — eight fictional participants for demonstrations |
 
 Then, in the Supabase dashboard:
 
@@ -186,6 +188,34 @@ they cannot disagree.
 A *Review answers* control sits in the progress bar so the review screen is
 reachable at any point. Without it the submission gate could never be exercised in
 an incomplete state, making the requirement impossible to demonstrate or test.
+
+---
+
+## Sprint 5
+
+Two requirements confirmed by the client for the final sprint.
+
+### Anonymous participation with the option to keep the result
+
+A participant can take the whole assessment without an account. Once it is
+submitted, the results page offers **Save these results to an account**: they
+create an account (or sign in to one) without leaving the page, and the result
+that was stored anonymously is attached to that account, so they can return to it
+on their dashboard and compare it with later attempts.
+
+The attachment is done by `claim_assessment()` (`sprint5-claim.sql`). It accepts
+only a completed result that is still anonymous, from a signed-in account, within
+24 hours of completion, and applies the same two-attempts-a-year rule as a normal
+submission. The result's random session id is known only to the browser that
+submitted it, so no one else can claim it.
+
+### Email verification code
+
+Creating an account sends a 6-digit code to the address given; the account is
+usable only after the code is entered. A code can be resent, and signing in with
+an unverified address returns the participant to the code screen with a fresh code.
+
+`SPRINT5_TEST_PLAN.md` is the test script for both.
 
 ---
 

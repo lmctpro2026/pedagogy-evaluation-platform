@@ -437,7 +437,7 @@
     } else if (window.PED.identity?.isRegistered()) {
       msg = `<span class="tick" aria-hidden="true">✓</span> Saved — this is now your active ${result.year || new Date().getFullYear()} result.`;
     } else {
-      msg = '<span class="tick" aria-hidden="true">✓</span> Your results are saved anonymously.';
+      msg = '<span class="tick" aria-hidden="true">✓</span> Your results are saved anonymously — on the results page you can save them to an account.';
     }
     setConsentStatus(msg);
   }
