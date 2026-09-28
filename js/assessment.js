@@ -157,6 +157,27 @@
     }
   }
 
+  // Attach a stored anonymous result to the signed-in account (sprint5-claim.sql).
+  // The server only accepts a completed, still-anonymous session from the last
+  // 24 hours and applies the two-attempts-per-year rule. Resolves
+  // { ok, previousId, removed, year } or { ok: false, message }.
+  async function claimSession(sessionId) {
+    const sb = window.PED.supabase;
+    if (!sb || !sessionId) return { ok: false, message: 'Not connected.' };
+    try {
+      const { data, error } = await sb.rpc('claim_assessment', { p_session_id: sessionId });
+      if (error) throw error;
+      return { ok: true, previousId: data?.previous_id || null, removed: data?.removed || 0, year: data?.year || null };
+    } catch (e) {
+      const m = e?.message || '';
+      const message = e?.code === 'PGRST202' ? 'Saving results to an account needs the Sprint 5 database update.'
+        : /CLAIM_EXPIRED/.test(m)     ? 'Results can be saved to an account within 24 hours of completing the evaluation.'
+        : /CLAIM_UNAVAILABLE/.test(m) ? 'This result has already been saved to an account.'
+        : (m || 'Could not save this result to your account.');
+      return { ok: false, message };
+    }
+  }
+
   // Persist the optional demographics for a completed session.
   // `data.provided === false` records a participant who was asked and declined.
   // The row is write-once (unique session_id, no UPDATE policy), so a repeat
@@ -230,5 +251,5 @@
   }
 
   window.PED = window.PED || {};
-  window.PED.assessment = { completeSession, getAttempts, deletePreviousAttempt, saveDemographics, sendEmailNotifications };
+  window.PED.assessment = { completeSession, getAttempts, deletePreviousAttempt, claimSession, saveDemographics, sendEmailNotifications };
 })();

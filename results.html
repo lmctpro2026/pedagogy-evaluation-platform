@@ -4,8 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Your Results · Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=2.1" />
-<link rel="stylesheet" href="css/results.css?v=2.1" />
+<link rel="stylesheet" href="css/main.css?v=2.2" />
+<link rel="stylesheet" href="css/results.css?v=2.2" />
+<link rel="stylesheet" href="css/modal.css?v=2.2" />
 </head>
 <body>
 
@@ -79,6 +80,24 @@
             </div>
           </div>
           <ul class="chart-legend" id="chart-legend"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Save to account — anonymous participants whose result was stored (js/results.js) -->
+  <section class="results-section" id="save-account" hidden>
+    <div class="container">
+      <div class="email-card save-card">
+        <div class="email-copy">
+          <p class="eyebrow">Keep this result</p>
+          <h2>Save these results to an account</h2>
+          <p>This result was stored without your name. Create a free account — or sign in to one — and it is saved to you, so you can come back to it, compare attempts and follow your practice over the years.</p>
+        </div>
+        <div class="save-actions" id="save-actions">
+          <button type="button" class="btn btn-primary" data-open-modal="register" data-intent="claim">Create account &amp; save</button>
+          <button type="button" class="btn btn-ghost" data-open-modal="signin" data-intent="claim">I already have an account</button>
+          <p class="ec-msg" id="save-msg" aria-live="polite"></p>
         </div>
       </div>
     </div>
@@ -197,11 +216,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=2.1"></script>
-<script src="js/session.js?v=2.1"></script>
-<script src="js/questions.js?v=2.1"></script>
-<script src="js/scoring.js?v=2.1"></script>
-<script src="js/assessment.js?v=2.1"></script>
-<script src="js/results.js?v=2.1"></script>
+<script src="js/supabase.js?v=2.2"></script>
+<script src="js/session.js?v=2.2"></script>
+<script src="js/questions.js?v=2.2"></script>
+<script src="js/scoring.js?v=2.2"></script>
+<script src="js/assessment.js?v=2.2"></script>
+<script src="js/auth.js?v=2.2"></script>
+<script src="js/results.js?v=2.2"></script>
 </body>
 </html>

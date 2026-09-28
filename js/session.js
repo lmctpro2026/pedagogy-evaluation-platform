@@ -5,6 +5,7 @@
 //   window.PED.identity.current()        → ped.session profile or null
 //   window.PED.identity.isRegistered()   → signed in with an account (not anonymous)
 //   window.PED.identity.begin(profile)   → start as a new participant
+//   window.PED.identity.adopt(profile)   → become this participant, keeping the result on this device
 //   window.PED.identity.requireAccount() → resolves the Supabase user or redirects
 //   window.PED.identity.signOut(reason)
 //
@@ -44,17 +45,23 @@
   // person's answers. Answers given before choosing (the home-page question)
   // have no owner yet and are kept.
   function begin(profile) {
-    const nextOwner = ownerOf(profile);
     let prevOwner = '';
     try { prevOwner = localStorage.getItem(OWNER_KEY) || ''; } catch {}
+    if (prevOwner && prevOwner !== ownerOf(profile)) clearAssessmentData();
+    adopt(profile);
+  }
 
-    if (prevOwner && prevOwner !== nextOwner) clearAssessmentData();
+  // Become this participant without touching the result on this device — an
+  // anonymous participant who creates an account after submitting keeps their
+  // scores on screen while the stored result is attached to the account.
+  function adopt(profile) {
     try {
       localStorage.setItem('ped.session', JSON.stringify(profile));
-      localStorage.setItem(OWNER_KEY, nextOwner);
+      localStorage.setItem(OWNER_KEY, ownerOf(profile));
       sessionStorage.setItem('ped.userName',  profile.displayName || '');
       sessionStorage.setItem('ped.userEmail', profile.email || '');
     } catch {}
+    paintAuthState(profile);
   }
 
   function clearAssessmentData() {
@@ -169,6 +176,6 @@
     } catch {}
   });
 
-  window.PED.identity = { current, isRegistered, begin, clearAssessmentData, requireAccount, signOut };
+  window.PED.identity = { current, isRegistered, begin, adopt, clearAssessmentData, requireAccount, signOut };
   window.PED.evalSession = evalSession;
 })();
