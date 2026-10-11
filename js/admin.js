@@ -252,6 +252,7 @@
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
+    loadQuestionBank();
 
     try {
       const [usersRes, sessionsRes, demoRes] = await Promise.all([
@@ -930,6 +931,139 @@
       } else {
         container.hidden = true;
         tog.textContent = 'View responses';
+      }
+    });
+  });
+
+
+  // -------------------------------------------------------------------------
+  // Question bank — the 20 statements, with their wording editable in place.
+  //
+  // Only the wording is editable; category, order and weight are fixed by the
+  // framework (and locked by a database trigger). A row's Save button lights up
+  // when the textarea differs from what is stored; "Restore original" returns
+  // the shipped wording from js/questions.js.
+  // -------------------------------------------------------------------------
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  function editedHtml(row) {
+    if (!row.updated_at) return '<span class="cell-muted">Original wording</span>';
+    return `${formatDate(row.updated_at)}<br><span class="cell-muted">${esc(row.updated_by || '')}</span>`;
+  }
+
+  async function loadQuestionBank() {
+    const body = $('#qb-tbody');
+    const bank = window.PED.questionBank;
+    if (!body || !bank) return;
+    try {
+      const { rows, editable } = await bank.fetchAll();
+      bank.apply(rows);   // the responses view reads PED.QUESTIONS
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="5" class="table-empty">No questions found in the database.</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map(r => {
+        const n = String(r.order_index).padStart(2, '0');
+        const isDefault = r.text.trim() === bank.defaultText(r.code);
+        return `<tr data-code="${esc(r.code)}" data-saved="${esc(r.text)}" data-edited="${r.updated_at ? '1' : '0'}">
+          <td class="qb-num">${n}</td>
+          <td><span class="cat-pill cat-${esc(r.category)}">${esc(r.category)}</span></td>
+          <td class="qb-text">
+            <textarea rows="2" maxlength="${bank.MAX}" aria-label="Statement ${n}" spellcheck="true" ${editable ? '' : 'readonly'}>${esc(r.text)}</textarea>
+            <div class="qb-text-foot">
+              <span class="qb-count">${r.text.length} / ${bank.MAX}</span>
+              <span class="qb-msg" aria-live="polite"></span>
+            </div>
+          </td>
+          <td class="qb-edited">${editedHtml(r)}</td>
+          <td class="qb-actions">
+            <button type="button" class="btn btn-primary btn-sm qb-save" disabled>Save</button>
+            <button type="button" class="btn btn-ghost btn-sm qb-restore" ${isDefault || !editable ? 'hidden' : ''}>Restore original</button>
+          </td>
+        </tr>`;
+      }).join('');
+      qbNote();
+      if (!editable) {
+        const note = $('#qb-note');
+        if (note) note.textContent = 'Read-only until question-bank.sql has been run in the Supabase SQL Editor';
+      }
+    } catch (err) {
+      console.error('[admin] question bank error:', err);
+      body.innerHTML = `<tr><td colspan="5" class="table-empty is-error">Could not load the question bank: ${esc(err.message)}</td></tr>`;
+    }
+  }
+
+  function qbNote() {
+    const rows = Array.from($$('#qb-tbody tr[data-code]'));
+    const edited = rows.filter(r => r.dataset.edited === '1').length;
+    const note = $('#qb-note');
+    if (note) note.textContent = `${rows.length} statements · ${edited ? `${edited} edited` : 'original wording'}`;
+  }
+
+  function qbRowState(row) {
+    const bank = window.PED.questionBank;
+    const ta = row.querySelector('textarea');
+    const value = ta.value.trim();
+    const changed = value !== row.dataset.saved.trim();
+    row.querySelector('.qb-count').textContent = `${ta.value.length} / ${bank.MAX}`;
+    row.querySelector('.qb-save').disabled = !changed || !!bank.validate(value);
+    row.querySelector('.qb-restore').hidden = value === bank.defaultText(row.dataset.code);
+    const msg = row.querySelector('.qb-msg');
+    const problem = changed ? bank.validate(value) : '';
+    msg.textContent = problem;
+    msg.classList.toggle('is-danger', !!problem);
+  }
+
+  async function qbSave(row) {
+    const bank = window.PED.questionBank;
+    const ta   = row.querySelector('textarea');
+    const btn  = row.querySelector('.qb-save');
+    const msg  = row.querySelector('.qb-msg');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    msg.textContent = '';
+    msg.classList.remove('is-danger');
+    const out = await bank.update(row.dataset.code, ta.value);
+    btn.textContent = 'Save';
+    if (out.ok) {
+      row.dataset.saved = out.row.text;
+      row.dataset.edited = '1';
+      ta.value = out.row.text;
+      row.querySelector('.qb-edited').innerHTML = editedHtml(out.row);
+      qbRowState(row);
+      msg.textContent = 'Saved';
+      qbNote();
+      return;
+    }
+    qbRowState(row);
+    msg.textContent = out.message;
+    msg.classList.add('is-danger');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const body = $('#qb-tbody');
+    if (!body) return;
+    body.addEventListener('input', e => {
+      const row = e.target.closest('tr[data-code]');
+      if (row && e.target.matches('textarea')) qbRowState(row);
+    });
+    body.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && e.target.matches('textarea')) {
+        const row = e.target.closest('tr[data-code]');
+        if (row && !row.querySelector('.qb-save').disabled) { e.preventDefault(); qbSave(row); }
+      }
+    });
+    body.addEventListener('click', e => {
+      const row = e.target.closest('tr[data-code]');
+      if (!row) return;
+      if (e.target.closest('.qb-save')) qbSave(row);
+      if (e.target.closest('.qb-restore')) {
+        const ta = row.querySelector('textarea');
+        ta.value = window.PED.questionBank.defaultText(row.dataset.code);
+        qbRowState(row);
+        ta.focus();
       }
     });
   });

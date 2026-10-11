@@ -111,6 +111,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const responses = readResponses();
     $('#try-text').textContent = first.text;
+    window.PED.questionBank?.sync().then(() => { $('#try-text').textContent = first.text; });
     renderScale(responses);
     renderStrip(responses);
     renderStatus(responses);

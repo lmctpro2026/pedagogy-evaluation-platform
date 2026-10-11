@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin Dashboard — Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=2.2" />
-<link rel="stylesheet" href="css/admin.css?v=2.2" />
+<link rel="stylesheet" href="css/main.css?v=2.3" />
+<link rel="stylesheet" href="css/admin.css?v=2.3" />
 </head>
 <body data-signout-redirect="admin.html">
 
@@ -178,6 +178,35 @@
       <div class="demo-empty" id="demographics-empty" hidden></div>
     </section>
 
+    <!-- Question bank -->
+    <section class="panel" id="question-bank" aria-labelledby="qb-title">
+      <div class="panel-head">
+        <h2 class="panel-title" id="qb-title">Question bank</h2>
+        <span class="panel-note" id="qb-note">The 20 statements participants rate</span>
+      </div>
+      <p class="qb-intro">
+        Edit a statement's wording and save it. The change applies to everyone who takes the
+        evaluation from then on; answers already recorded keep their values. Category, order and
+        weighting are fixed by the framework and cannot be changed here.
+      </p>
+      <div class="table-scroll">
+        <table class="data-table qb-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Category</th>
+              <th scope="col">Statement</th>
+              <th scope="col">Last edited</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="qb-tbody">
+            <tr><td colspan="5" class="table-empty">Loading questions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Participants -->
     <section class="panel panel-flush" aria-labelledby="participants-title">
       <div class="table-toolbar">
@@ -245,10 +274,11 @@
 <!-- ========================= SCRIPTS ========================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=2.2"></script>
-<script src="js/session.js?v=2.2"></script>
-<script src="js/questions.js?v=2.2"></script>
-<script src="js/demographic-options.js?v=2.2"></script>
-<script src="js/admin.js?v=2.2"></script>
+<script src="js/supabase.js?v=2.3"></script>
+<script src="js/session.js?v=2.3"></script>
+<script src="js/questions.js?v=2.3"></script>
+<script src="js/question-bank.js?v=2.3"></script>
+<script src="js/demographic-options.js?v=2.3"></script>
+<script src="js/admin.js?v=2.3"></script>
 </body>
 </html>
