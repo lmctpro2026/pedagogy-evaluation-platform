@@ -657,6 +657,9 @@
     $('#q-total').textContent = String(total).padStart(2,'0');
     $('#q-review-link').addEventListener('click', () => { returnToReview = false; showReview(); });
 
+    // Statement wording comes from the question bank when it can be reached.
+    const wording = window.PED.questionBank?.sync();
+
     const identity = window.PED.identity;
     // Arrived without choosing (e.g. a direct link) — continue anonymously.
     if (identity && !identity.current()) {
@@ -673,6 +676,7 @@
       if (!user) return;   // redirecting to sign in
       attempts = await window.PED.assessment.getAttempts();
     }
+    await wording;
     showWelcome(attempts);
   });
 })();
