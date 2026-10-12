@@ -6,9 +6,9 @@
 <title>Pedagogy Evaluation Platform — Evaluate your techno-pedagogical practice</title>
 <meta name="description" content="A research-informed self-assessment for educators, based on the Firmin (2020) techno-pedagogical practice framework." />
 
-<link rel="stylesheet" href="css/main.css?v=2.1" />
-<link rel="stylesheet" href="css/landing.css?v=2.1" />
-<link rel="stylesheet" href="css/modal.css?v=2.1" />
+<link rel="stylesheet" href="css/main.css?v=2.2" />
+<link rel="stylesheet" href="css/landing.css?v=2.2" />
+<link rel="stylesheet" href="css/modal.css?v=2.2" />
 </head>
 <body>
 
@@ -332,108 +332,13 @@
   </div>
 </footer>
 
-<!-- ===================== AUTH MODAL ===================== -->
-<div class="modal-backdrop" id="auth-modal" data-close-modal>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <button type="button" class="modal-close" data-close-modal aria-label="Close">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-
-    <p class="eyebrow modal-eyebrow">Access</p>
-    <h2 id="modal-title" class="modal-title">Start the assessment</h2>
-    <p class="modal-sub">Sign in, create an account, or continue anonymously.</p>
-
-    <div class="tabs" role="group" aria-label="Access options">
-      <button type="button" class="tab active" data-tab="signin">Sign in</button>
-      <button type="button" class="tab" data-tab="register">Create account</button>
-      <button type="button" class="tab" data-tab="anonymous">Anonymous</button>
-    </div>
-
-    <!-- Sign in -->
-    <form class="panel active" data-panel="signin" id="signin-form" novalidate>
-      <div class="field">
-        <label for="l-email">Email</label>
-        <input id="l-email" type="email" placeholder="you@university.edu" autocomplete="email" />
-        <span class="err"></span>
-      </div>
-      <div class="field">
-        <label for="l-pass">Password</label>
-        <input id="l-pass" type="password" placeholder="Your password" autocomplete="current-password" />
-        <span class="err"></span>
-      </div>
-      <button class="btn btn-primary" id="l-submit" type="submit" disabled>Sign in &amp; continue</button>
-      <div class="alt-line">New here? <button type="button" data-open-modal="register">Create an account</button></div>
-    </form>
-
-    <!-- Register -->
-    <form class="panel" data-panel="register" id="register-form" novalidate>
-      <div class="field">
-        <label for="r-name">Full name</label>
-        <input id="r-name" type="text" placeholder="First Last" autocomplete="name" />
-        <span class="err"></span>
-      </div>
-      <div class="field">
-        <label for="r-email">Email</label>
-        <input id="r-email" type="email" placeholder="you@university.edu" autocomplete="email" />
-        <span class="err"></span>
-      </div>
-      <div class="field">
-        <label for="r-pass">Password</label>
-        <input id="r-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
-        <span class="err"></span>
-        <div class="strength" id="r-strength" aria-hidden="true">
-          <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
-        </div>
-        <span class="strength-label" id="r-strength-label"></span>
-      </div>
-      <label class="consent">
-        <input id="r-consent" type="checkbox" />
-        <span>I consent to my completed evaluations being stored for up to 3 years to generate my report and show my progress over time. No data is shared with third parties.</span>
-      </label>
-      <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account &amp; begin</button>
-      <div class="alt-line">Already registered? <button type="button" data-open-modal="signin">Sign in instead</button></div>
-    </form>
-
-    <!-- OTP verification (shown programmatically after register) -->
-    <div class="panel otp-panel" data-panel="verify" id="verify-panel">
-      <div class="otp-intro">
-        <svg class="otp-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 13l8.5-6.5"/></svg>
-        <p>We sent a <strong>6-digit code</strong> to</p>
-        <p class="otp-email" id="otp-email-display">your email address</p>
-        <p class="otp-hint">Check your inbox and spam folder. Code expires in 1 hour.</p>
-      </div>
-      <div class="field">
-        <label for="otp-code">Verification code</label>
-        <input id="otp-code" type="text" inputmode="numeric" placeholder="000000" maxlength="6" autocomplete="one-time-code" />
-        <span class="err" id="otp-code-err"></span>
-      </div>
-      <button class="btn btn-primary" id="otp-submit" type="button" disabled>Verify &amp; begin →</button>
-      <div class="alt-line">Didn't receive it? <button type="button" id="otp-resend">Resend code</button></div>
-    </div>
-
-    <!-- Anonymous -->
-    <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>
-      <div class="anon-card">
-        <h4>One click, no account</h4>
-        <p>Take the full assessment, see your scores and export a PDF without registering. Nothing is stored until you submit — then your answers are saved without your name.</p>
-      </div>
-      <label class="consent">
-        <input id="a-consent" type="checkbox" />
-        <span>I understand my completed answers are stored anonymously for research, for up to 3 years.</span>
-      </label>
-      <button class="btn btn-primary" id="a-submit" type="submit" disabled>Continue anonymously →</button>
-      <div class="alt-line">Want to compare years? <button type="button" data-open-modal="register">Create an account</button></div>
-    </form>
-  </div>
-</div>
-
 <!-- ===================== SCRIPTS ===================== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js?v=2.1"></script>
-<script src="js/session.js?v=2.1"></script>
-<script src="js/questions.js?v=2.1"></script>
-<script src="js/scoring.js?v=2.1"></script>
-<script src="js/auth.js?v=2.1"></script>
-<script src="js/landing.js?v=2.1"></script>
+<script src="js/supabase.js?v=2.2"></script>
+<script src="js/session.js?v=2.2"></script>
+<script src="js/questions.js?v=2.2"></script>
+<script src="js/scoring.js?v=2.2"></script>
+<script src="js/auth.js?v=2.2"></script>
+<script src="js/landing.js?v=2.2"></script>
 </body>
 </html>

@@ -326,6 +326,44 @@
 .btn-link:hover { color: var(--text); }
 
 /* --------------------------------------------------------------------------
+   Save to account (anonymous participants whose result reached the server)
+   Shares the email-card layout; the right column holds the actions.
+   -------------------------------------------------------------------------- */
+.save-card { border-color: var(--accent-line); }
+
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  padding-top: 1.75rem;
+}
+.save-actions .ec-msg {
+  flex-basis: 100%;
+  margin-top: 0;
+}
+
+.save-done {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.save-done .tick {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
    Actions
    -------------------------------------------------------------------------- */
 .actions-row {
@@ -359,6 +397,7 @@
   .chart-grid,
   .email-card { grid-template-columns: 1fr; }
   .chart-grid { gap: 1.5rem; }
+  .save-actions { padding-top: 0; }
   .chart-wrap { height: 260px; }
 }
 
@@ -366,7 +405,8 @@
   .scores-grid { grid-template-columns: 1fr; }
   .overall-summary { gap: 1.25rem 2rem; }
   .overall-summary > .btn,
-  .actions-row .btn { width: 100%; }
+  .actions-row .btn,
+  .save-actions .btn { width: 100%; }
   .email-row { flex-direction: column; }
   .chart-card,
   .email-card { padding: 1.25rem; }
