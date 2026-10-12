@@ -137,6 +137,49 @@
     });
   }
 
+  // ---------- Save an anonymous result to an account ----------
+  // Offered when this device holds an anonymous result that reached the server
+  // (ped.sessionId). The card opens the auth modal in 'claim' mode; when the
+  // participant has signed in or registered (and verified their email), the
+  // 'ped:signed-in' event is taken over here: they become the current identity
+  // without losing the scores on screen, and the stored result is attached to
+  // their account.
+  function initSaveToAccount() {
+    const section = $('#save-account');
+    const identity = window.PED.identity;
+    const sessionId = sessionStorage.getItem('ped.sessionId');
+    if (!section || !window.PED.supabase || !sessionId || identity.isRegistered()) return;
+    section.hidden = false;
+
+    const actions = $('#save-actions');
+    const msg = $('#save-msg');
+
+    document.addEventListener('ped:signed-in', async e => {
+      if (e.detail.intent !== 'claim') return;
+      e.preventDefault();
+      identity.adopt(e.detail.profile);
+      actions.querySelectorAll('.btn').forEach(b => { b.disabled = true; });
+      msg.textContent = 'Saving this result to your account…';
+      msg.classList.remove('is-danger');
+
+      const out = await window.PED.assessment.claimSession(sessionId);
+      if (out.ok) {
+        $('#email-capture').hidden = true;   // the account email now receives results
+        const kept = out.previousId ? ' Your earlier attempt this year is kept as your previous attempt.' : '';
+        actions.innerHTML = `
+          <p class="save-done"><span class="tick" aria-hidden="true">✓</span> Saved to your account.${kept}</p>
+          <a class="btn btn-primary" href="my-results.html">Open my dashboard</a>`;
+        return;
+      }
+      // The account exists and they are signed in — only the attachment failed.
+      actions.innerHTML = `
+        <p class="ec-msg is-danger"></p>
+        <a class="btn btn-ghost" href="my-results.html">Open my dashboard</a>`;
+      actions.querySelector('.ec-msg').textContent =
+        `${out.message} Your account is ready, and your next evaluation will be saved to it automatically.`;
+    });
+  }
+
   function noResults() {
     $('#results-root').innerHTML = `
       <section class="container empty-state">
@@ -156,6 +199,7 @@
     renderHero(scores);
     renderScoreCards(scores);
     renderChart(scores);
+    initSaveToAccount();
 
     $('#a-retake')?.addEventListener('click', e => {
       e.preventDefault();

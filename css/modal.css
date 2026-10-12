@@ -291,6 +291,13 @@
 }
 
 /* --------------------------------------------------------------------------
+   Claim mode — saving an anonymous result to an account (results page).
+   The participant is already anonymous, so that option is not offered.
+   -------------------------------------------------------------------------- */
+.modal.is-claim .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.modal.is-claim .tab[data-tab="anonymous"] { display: none; }
+
+/* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */
 @media (max-width: 600px) {

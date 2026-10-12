@@ -1,10 +1,144 @@
 // ===========================================================================
 // Auth modal — UI, validation, and all three Supabase auth flows.
+//
+// The modal is rendered by this file, so any page that loads auth.js (with
+// css/modal.css) can open it. Open it with [data-open-modal="signin|register"]
+// or PED.openModal(tab, { intent }).
+//
+// Intents decide what happens after a successful sign-in or registration:
+//   start (default) — the participant is taken to the questionnaire
+//   claim           — a page keeps the participant where they are and attaches
+//                     their anonymous result to the new account: the page
+//                     listens for the 'ped:signed-in' event and calls
+//                     preventDefault() to take over (see js/results.js)
 // ===========================================================================
 
 (function () {
   const $  = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
+
+  const MODAL_HTML = `
+<div class="modal-backdrop" id="auth-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button type="button" class="modal-close" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <p class="eyebrow modal-eyebrow" id="modal-eyebrow">Access</p>
+    <h2 id="modal-title" class="modal-title">Start the assessment</h2>
+    <p class="modal-sub" id="modal-sub">Sign in, create an account, or continue anonymously.</p>
+
+    <div class="tabs" role="group" aria-label="Access options">
+      <button type="button" class="tab active" data-tab="signin">Sign in</button>
+      <button type="button" class="tab" data-tab="register">Create account</button>
+      <button type="button" class="tab" data-tab="anonymous">Anonymous</button>
+    </div>
+
+    <!-- Sign in -->
+    <form class="panel active" data-panel="signin" id="signin-form" novalidate>
+      <div class="field">
+        <label for="l-email">Email</label>
+        <input id="l-email" type="email" placeholder="you@university.edu" autocomplete="email" />
+        <span class="err"></span>
+      </div>
+      <div class="field">
+        <label for="l-pass">Password</label>
+        <input id="l-pass" type="password" placeholder="Your password" autocomplete="current-password" />
+        <span class="err"></span>
+      </div>
+      <button class="btn btn-primary" id="l-submit" type="submit" disabled>Sign in &amp; continue</button>
+      <div class="alt-line">New here? <button type="button" data-open-modal="register">Create an account</button></div>
+    </form>
+
+    <!-- Register -->
+    <form class="panel" data-panel="register" id="register-form" novalidate>
+      <div class="field">
+        <label for="r-name">Full name</label>
+        <input id="r-name" type="text" placeholder="First Last" autocomplete="name" />
+        <span class="err"></span>
+      </div>
+      <div class="field">
+        <label for="r-email">Email</label>
+        <input id="r-email" type="email" placeholder="you@university.edu" autocomplete="email" />
+        <span class="err"></span>
+      </div>
+      <div class="field">
+        <label for="r-pass">Password</label>
+        <input id="r-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+        <span class="err"></span>
+        <div class="strength" id="r-strength" aria-hidden="true">
+          <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </div>
+        <span class="strength-label" id="r-strength-label"></span>
+      </div>
+      <label class="consent">
+        <input id="r-consent" type="checkbox" />
+        <span>I consent to my completed evaluations being stored for up to 3 years to generate my report and show my progress over time. No data is shared with third parties.</span>
+      </label>
+      <button class="btn btn-primary" id="r-submit" type="submit" disabled>Create account &amp; begin</button>
+      <div class="alt-line">Already registered? <button type="button" data-open-modal="signin">Sign in instead</button></div>
+    </form>
+
+    <!-- Email verification code (shown after register) -->
+    <div class="panel otp-panel" data-panel="verify" id="verify-panel">
+      <div class="otp-intro">
+        <svg class="otp-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 13l8.5-6.5"/></svg>
+        <p>We sent a <strong>6-digit code</strong> to</p>
+        <p class="otp-email" id="otp-email-display">your email address</p>
+        <p class="otp-hint">Check your inbox and spam folder. Code expires in 1 hour.</p>
+      </div>
+      <div class="field">
+        <label for="otp-code">Verification code</label>
+        <input id="otp-code" type="text" inputmode="numeric" placeholder="000000" maxlength="6" autocomplete="one-time-code" />
+        <span class="err" id="otp-code-err"></span>
+      </div>
+      <button class="btn btn-primary" id="otp-submit" type="button" disabled>Verify &amp; begin →</button>
+      <div class="alt-line">Didn't receive it? <button type="button" id="otp-resend">Resend code</button></div>
+    </div>
+
+    <!-- Anonymous -->
+    <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>
+      <div class="anon-card">
+        <h4>One click, no account</h4>
+        <p>Take the full assessment, see your scores and export a PDF without registering. Nothing is stored until you submit — then your answers are saved without your name.</p>
+      </div>
+      <label class="consent">
+        <input id="a-consent" type="checkbox" />
+        <span>I understand my completed answers are stored anonymously for research, for up to 3 years.</span>
+      </label>
+      <button class="btn btn-primary" id="a-submit" type="submit" disabled>Continue anonymously →</button>
+      <div class="alt-line">Want to compare years? <button type="button" data-open-modal="register">Create an account</button></div>
+    </form>
+  </div>
+</div>`;
+
+  if (!document.getElementById('auth-modal')) document.body.insertAdjacentHTML('beforeend', MODAL_HTML);
+
+  // Copy per intent. The verify panel keeps its own title.
+  const COPY = {
+    start: {
+      eyebrow: 'Access', title: 'Start the assessment',
+      sub: 'Sign in, create an account, or continue anonymously.',
+      signin: 'Sign in &amp; continue', register: 'Create account &amp; begin', verify: 'Verify &amp; begin →',
+    },
+    claim: {
+      eyebrow: 'Keep this result', title: 'Save your results',
+      sub: 'Create an account or sign in — this result is saved to it and appears on your dashboard.',
+      signin: 'Sign in &amp; save results', register: 'Create account &amp; save', verify: 'Verify &amp; save results →',
+    },
+  };
+  let modalIntent = 'start';
+
+  function applyIntent(intent) {
+    modalIntent = COPY[intent] ? intent : 'start';
+    const c = COPY[modalIntent];
+    $('#modal-eyebrow').textContent = c.eyebrow;
+    $('#modal-sub').textContent = c.sub;
+    $('#l-submit').innerHTML   = c.signin;
+    $('#r-submit').innerHTML   = c.register;
+    $('#otp-submit').innerHTML = c.verify;
+    $('#auth-modal .modal').classList.toggle('is-claim', modalIntent === 'claim');
+  }
 
   // Pending OTP state — set when registration needs email verification.
   // Persisted to sessionStorage so an accidental refresh doesn't strand the
@@ -15,7 +149,7 @@
   const PENDING_KEY = 'ped.pendingVerify';
   function savePending() {
     try {
-      if (pendingEmail) sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email: pendingEmail, name: pendingName, ts: Date.now() }));
+      if (pendingEmail) sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email: pendingEmail, name: pendingName, intent: modalIntent, ts: Date.now() }));
       else              sessionStorage.removeItem(PENDING_KEY);
     } catch {}
   }
@@ -68,9 +202,10 @@
   // -----------------------------------------------------------------------
   // Modal open/close
   // -----------------------------------------------------------------------
-  function openModal(initialTab) {
+  function openModal(initialTab, { intent } = {}) {
     const backdrop = $('#auth-modal');
     if (!backdrop) return;
+    applyIntent(intent || modalIntent);
     backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
     if (initialTab) switchTab(initialTab);
@@ -79,6 +214,7 @@
     const backdrop = $('#auth-modal');
     if (!backdrop) return;
     backdrop.classList.remove('is-open');
+    applyIntent('start');
     document.body.style.overflow = '';
     $$('#auth-modal input[type="text"],#auth-modal input[type="email"],#auth-modal input[type="password"]')
       .forEach(i => { i.value = ''; i.dispatchEvent(new Event('input')); });
@@ -111,7 +247,7 @@
     const tabsEl = $('.tabs');
     if (tabsEl) tabsEl.style.display = name === 'verify' ? 'none' : '';
     const titleEl = $('#modal-title');
-    if (titleEl) titleEl.textContent = name === 'verify' ? 'Verify your email' : 'Start the assessment';
+    if (titleEl) titleEl.textContent = name === 'verify' ? 'Verify your email' : COPY[modalIntent].title;
   }
 
   // -----------------------------------------------------------------------
@@ -126,7 +262,7 @@
     }
 
     const openBtn = e.target.closest('[data-open-modal]');
-    if (openBtn) { e.preventDefault(); openModal(openBtn.dataset.openModal || 'signin'); return; }
+    if (openBtn) { e.preventDefault(); openModal(openBtn.dataset.openModal || 'signin', { intent: openBtn.dataset.intent }); return; }
 
     const tab = e.target.closest('.tab');
     if (tab && tab.dataset.tab) { switchTab(tab.dataset.tab); return; }
@@ -323,10 +459,9 @@
             }
           }
           const displayName = (pendingName || '').split(' ')[0] || 'You';
-          enterAs({ mode: 'register', email: normEmail(pendingEmail), displayName, fullName: pendingName, ts: Date.now() });
+          const profile = { mode: 'register', email: normEmail(pendingEmail), displayName, fullName: pendingName, ts: Date.now() };
           pendingEmail = ''; pendingName = ''; savePending();
-          closeModal();
-          setTimeout(() => { window.location.href = 'questionnaire.html'; }, 400);
+          finishSignIn(profile, 'questionnaire.html', 400);
         } catch (err) {
           console.error('[auth] OTP verify exception:', err);
           if (otpErr) otpErr.textContent = `Verification failed: ${err.message || err}`;
@@ -361,8 +496,7 @@
       const otpEmailEl = document.getElementById('otp-email-display');
       if (otpEmailEl) otpEmailEl.textContent = pendingEmail;
       console.log('[auth] Restored pending verification for', pendingEmail);
-      openModal();
-      switchTab('verify');
+      openModal('verify', { intent: pend.intent });
     }
 
     syncSubmitButtons();
@@ -380,6 +514,19 @@
       sessionStorage.setItem('ped.userName',  profile.displayName || '');
       sessionStorage.setItem('ped.userEmail', profile.email || '');
     } catch {}
+  }
+
+  // Signed in or registered. With the default intent the participant becomes
+  // the current identity and moves on to `next`. A page that opened the modal
+  // with another intent (results.js: 'claim') takes over by cancelling the
+  // event — it decides what to do with the profile and where to go.
+  function finishSignIn(profile, next, delayMs) {
+    const event = new CustomEvent('ped:signed-in', { detail: { profile, intent: modalIntent }, cancelable: true });
+    const handled = !document.dispatchEvent(event);
+    if (handled) { closeModal(); return; }
+    enterAs(profile);
+    closeModal();
+    setTimeout(() => { window.location.href = next; }, delayMs);
   }
 
   function setSubmitting(btnId, on) {
@@ -459,9 +606,7 @@
       }
       const ne = normEmail(email);
       const displayName = (fullName || '').split(' ')[0] || ne.split('@')[0];
-      enterAs({ mode: 'email', email: ne, displayName, fullName, ts: Date.now() });
-      closeModal();
-      window.location.href = nextPage();
+      finishSignIn({ mode: 'email', email: ne, displayName, fullName, ts: Date.now() }, nextPage(), 0);
     } catch (err) {
       console.error('[auth] login error:', err);
       showFieldError('l-pass', isNetworkError(err) ? OFFLINE_MSG : 'Sign-in failed. Please try again.');
@@ -532,9 +677,7 @@
         }
       }
       const displayName = name.split(' ')[0];
-      enterAs({ mode: 'register', email, displayName, fullName: name, ts: Date.now() });
-      closeModal();
-      setTimeout(() => { window.location.href = 'questionnaire.html'; }, sb ? 400 : 0);
+      finishSignIn({ mode: 'register', email, displayName, fullName: name, ts: Date.now() }, 'questionnaire.html', sb ? 400 : 0);
     } catch (err) {
       console.error('[auth] register error:', err);
       showFieldError('r-email', isNetworkError(err) ? OFFLINE_MSG : `Registration failed: ${err.message || err}`);
