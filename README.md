@@ -119,6 +119,7 @@ Run these in the Supabase SQL Editor, in order. Each is idempotent.
 | 3 | `sprint3-demographics.sql` | Sprint 3 demographics table and its policies |
 | 4 | `sprint4-attempts.sql` | Sprint 4 — store on completion, 10-minute sessions, two attempts a year |
 | 5 | `sprint5-claim.sql` | Sprint 5 — save an anonymous result to an account |
+| 6 | `question-bank.sql` | Question bank — administrators edit the wording of the 20 statements |
 | 6 | `demo-seed.sql` | *Optional* — eight fictional participants for demonstrations |
 
 Then, in the Supabase dashboard:
@@ -218,6 +219,19 @@ an unverified address returns the participant to the code screen with a fresh co
 `SPRINT5_TEST_PLAN.md` is the test script for both.
 
 ---
+
+## Question bank
+
+The 20 statements live in the `questions` table. The admin dashboard shows them in a
+**Question bank** panel where an administrator can change a statement's wording and save it.
+The new wording applies to everyone who takes the evaluation from then on (home page,
+questionnaire, review screen and the admin responses view all read the database first and
+fall back to the copy in `js/questions.js` if it cannot be reached). Answers already recorded
+keep their values. Category, order and weighting are fixed by the framework and locked by a
+database trigger, so the scoring model cannot be changed from the dashboard. Each edit records
+when and by whom; **Restore original** returns the shipped wording.
+
+Until `question-bank.sql` has been run the panel is read-only and says so.
 
 ## Testing
 
