@@ -46,6 +46,7 @@
         <input id="l-pass" type="password" placeholder="Your password" autocomplete="current-password" />
         <span class="err"></span>
       </div>
+      <div class="alt-line forgot-line"><button type="button" data-open-modal="forgot">Forgot password?</button></div>
       <button class="btn btn-primary" id="l-submit" type="submit" disabled>Sign in &amp; continue</button>
       <div class="alt-line">New here? <button type="button" data-open-modal="register">Create an account</button></div>
     </form>
@@ -96,6 +97,43 @@
       <div class="alt-line">Didn't receive it? <button type="button" id="otp-resend">Resend code</button></div>
     </div>
 
+    <!-- Forgot password: ask for a reset code -->
+    <form class="panel" data-panel="forgot" id="forgot-form" novalidate>
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input id="f-email" type="email" placeholder="you@university.edu" autocomplete="email" />
+        <span class="err"></span>
+      </div>
+      <button class="btn btn-primary" id="f-submit" type="submit" disabled>Email me a code</button>
+      <div class="alt-line">Remembered it? <button type="button" data-open-modal="signin">Back to sign in</button></div>
+    </form>
+
+    <!-- Forgot password: enter the code and choose a new password -->
+    <form class="panel otp-panel reset-panel" data-panel="reset" id="reset-form" novalidate>
+      <div class="otp-intro">
+        <svg class="otp-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M18 5l2 2M15 8l2 2"/></svg>
+        <p>If an account exists for</p>
+        <p class="otp-email" id="reset-email-display">your email address</p>
+        <p class="otp-hint">a <strong>6-digit code</strong> is on its way. Check your inbox and spam folder. Code expires in 1 hour.</p>
+      </div>
+      <div class="field">
+        <label for="reset-code">Reset code</label>
+        <input id="reset-code" type="text" inputmode="numeric" placeholder="000000" maxlength="6" autocomplete="one-time-code" />
+        <span class="err"></span>
+      </div>
+      <div class="field field-text">
+        <label for="n-pass">New password</label>
+        <input id="n-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+        <span class="err"></span>
+        <div class="strength" id="n-strength" aria-hidden="true">
+          <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </div>
+        <span class="strength-label" id="n-strength-label"></span>
+      </div>
+      <button class="btn btn-primary" id="reset-submit" type="submit" disabled>Set password &amp; sign in</button>
+      <div class="alt-line">Didn't receive it? <button type="button" id="reset-resend">Resend code</button></div>
+    </form>
+
     <!-- Anonymous -->
     <form class="panel anon-panel" data-panel="anonymous" id="anon-form" novalidate>
       <div class="anon-card">
@@ -120,11 +158,13 @@
       eyebrow: 'Access', title: 'Start the assessment',
       sub: 'Sign in, create an account, or continue anonymously.',
       signin: 'Sign in &amp; continue', register: 'Create account &amp; begin', verify: 'Verify &amp; begin →',
+      reset: 'Set password &amp; sign in',
     },
     claim: {
       eyebrow: 'Keep this result', title: 'Save your results',
       sub: 'Create an account or sign in — this result is saved to it and appears on your dashboard.',
       signin: 'Sign in &amp; save results', register: 'Create account &amp; save', verify: 'Verify &amp; save results →',
+      reset: 'Set password &amp; save results',
     },
   };
   let modalIntent = 'start';
@@ -137,6 +177,7 @@
     $('#l-submit').innerHTML   = c.signin;
     $('#r-submit').innerHTML   = c.register;
     $('#otp-submit').innerHTML = c.verify;
+    $('#reset-submit').innerHTML = c.reset;
     $('#auth-modal .modal').classList.toggle('is-claim', modalIntent === 'claim');
   }
 
@@ -165,6 +206,36 @@
       }
       return obj;
     } catch { return null; }
+  }
+
+  // Pending password reset — the address a reset code was sent to. Kept for
+  // the tab like the verification state, so a refresh returns to the code step.
+  let resetEmail = '';
+  const RESET_KEY = 'ped.pendingReset';
+  function saveReset() {
+    try {
+      if (resetEmail) sessionStorage.setItem(RESET_KEY, JSON.stringify({ email: resetEmail, intent: modalIntent, ts: Date.now() }));
+      else            sessionStorage.removeItem(RESET_KEY);
+    } catch {}
+  }
+  function loadReset() {
+    try {
+      const raw = sessionStorage.getItem(RESET_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj?.email || (Date.now() - (obj.ts || 0)) > 60 * 60 * 1000) {
+        sessionStorage.removeItem(RESET_KEY);
+        return null;
+      }
+      return obj;
+    } catch { return null; }
+  }
+  function showResetStep(email) {
+    resetEmail = email;
+    saveReset();
+    const el = document.getElementById('reset-email-display');
+    if (el) el.textContent = email;
+    switchTab('reset');
   }
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -221,14 +292,14 @@
     $$('#auth-modal input[type="checkbox"]').forEach(c => { c.checked = false; });
     $$('#auth-modal .field').forEach(f => f.classList.remove('is-valid','is-invalid'));
     $$('#auth-modal .err').forEach(e => { e.textContent = ''; });
-    const sBars = $('#r-strength');
-    if (sBars) { sBars.className = 'strength'; }
-    const sLbl = $('#r-strength-label');
-    if (sLbl) sLbl.textContent = '';
-    // Reset OTP state (in-memory AND persisted)
+    $$('#auth-modal .strength').forEach(b => { b.className = 'strength'; });
+    $$('#auth-modal .strength-label').forEach(l => { l.textContent = ''; });
+    // Reset OTP and password-reset state (in-memory AND persisted)
     pendingEmail = '';
     pendingName  = '';
     savePending();
+    resetEmail = '';
+    saveReset();
     switchTab('signin');
     syncSubmitButtons();
   }
@@ -240,14 +311,23 @@
   // -----------------------------------------------------------------------
   // Tabs
   // -----------------------------------------------------------------------
+  // Steps that are not one of the three tabs: the tab row is hidden and the
+  // step carries its own title (and sub-copy where it differs from the intent's).
+  const STEP_COPY = {
+    verify: { title: 'Verify your email' },
+    forgot: { title: 'Reset your password', sub: "Enter the address you registered with and we'll email you a 6-digit code." },
+    reset:  { title: 'Choose a new password', sub: 'Enter the code from the email, then choose a new password.' },
+  };
   function switchTab(name) {
     $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
     $$('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === name));
-    // Hide the tab row when showing the OTP verification step
+    const step = STEP_COPY[name];
     const tabsEl = $('.tabs');
-    if (tabsEl) tabsEl.style.display = name === 'verify' ? 'none' : '';
+    if (tabsEl) tabsEl.style.display = step ? 'none' : '';
     const titleEl = $('#modal-title');
-    if (titleEl) titleEl.textContent = name === 'verify' ? 'Verify your email' : COPY[modalIntent].title;
+    if (titleEl) titleEl.textContent = step?.title || COPY[modalIntent].title;
+    const subEl = $('#modal-sub');
+    if (subEl) subEl.textContent = step?.sub || COPY[modalIntent].sub;
   }
 
   // -----------------------------------------------------------------------
@@ -335,6 +415,31 @@
 
     const aBtn = $('#a-submit');
     if (aBtn) aBtn.disabled = !$('#a-consent')?.checked;
+
+    const fBtn = $('#f-submit');
+    if (fBtn) fBtn.disabled = !validEmail($('#f-email')?.value||'');
+
+    const nBtn = $('#reset-submit');
+    if (nBtn) nBtn.disabled = !(($('#reset-code')?.value||'').length === 6 && validPass($('#n-pass')?.value||''));
+  }
+
+  // Password field with the strength meter (register and reset).
+  function wirePassword(inputId, barsId, labelId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const bars  = document.getElementById(barsId);
+    const label = document.getElementById(labelId);
+    const run = () => {
+      const v = input.value;
+      const ok = validPass(v);
+      setField(inputId, v ? ok : null, ok ? '' : 'Password must be at least 6 characters.');
+      const s = passwordStrength(v);
+      if (bars)  bars.className = 'strength s' + s;
+      if (label) label.textContent = v ? STRENGTH_LABEL[s] : '';
+      syncSubmitButtons();
+    };
+    input.addEventListener('input', run);
+    input.addEventListener('blur',  run);
   }
 
   // -----------------------------------------------------------------------
@@ -345,23 +450,9 @@
     attach('l-pass',  validPass,  'Password must be at least 6 characters.');
     attach('r-name',  validName,  'Please enter your first and last name.');
     attach('r-email', validEmail, 'Please enter a valid email address.');
-
-    const rPass = document.getElementById('r-pass');
-    if (rPass) {
-      const sBars = document.getElementById('r-strength');
-      const sLbl  = document.getElementById('r-strength-label');
-      const run = () => {
-        const v = rPass.value;
-        const ok = validPass(v);
-        setField('r-pass', v ? ok : null, ok ? '' : 'Password must be at least 6 characters.');
-        const s = passwordStrength(v);
-        if (sBars) sBars.className = 'strength s' + s;
-        if (sLbl)  sLbl.textContent = v ? STRENGTH_LABEL[s] : '';
-        syncSubmitButtons();
-      };
-      rPass.addEventListener('input', run);
-      rPass.addEventListener('blur',  run);
-    }
+    attach('f-email', validEmail, 'Please enter a valid email address.');
+    wirePassword('r-pass', 'r-strength', 'r-strength-label');
+    wirePassword('n-pass', 'n-strength', 'n-strength-label');
 
     document.getElementById('r-consent')?.addEventListener('change', syncSubmitButtons);
     document.getElementById('a-consent')?.addEventListener('change', syncSubmitButtons);
@@ -389,6 +480,45 @@
     document.getElementById('anon-form')?.addEventListener('submit', async e => {
       e.preventDefault();
       await startAnonymous();
+    });
+
+    // ---- Forgot password ----
+    document.getElementById('forgot-form')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = $('#f-email').value.trim();
+      if (!validEmail(email)) return showFieldError('f-email', 'Please enter a valid email address.');
+      await doForgot(email);
+    });
+
+    const resetCode = document.getElementById('reset-code');
+    if (resetCode) {
+      resetCode.addEventListener('input', () => {
+        resetCode.value = resetCode.value.replace(/\D/g, '').slice(0, 6);
+        setField('reset-code', null, '');
+        syncSubmitButtons();
+      });
+    }
+
+    document.getElementById('reset-form')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const code = ($('#reset-code').value || '').trim();
+      const pass = $('#n-pass').value;
+      if (code.length !== 6) return showFieldError('reset-code', 'Enter the 6-digit code from the email.');
+      if (!validPass(pass))  return showFieldError('n-pass', 'Password must be at least 6 characters.');
+      await doReset(code, pass);
+    });
+
+    document.getElementById('reset-resend')?.addEventListener('click', async () => {
+      const sb = window.PED.supabase;
+      if (!sb || !resetEmail) return;
+      try {
+        const { error } = await sb.auth.resetPasswordForEmail(resetEmail);
+        if (error) { console.error('[auth] reset resend error:', error); showToast(`Could not resend: ${error.message}`); }
+        else      { showToast('New code sent — check your inbox.'); }
+      } catch (err) {
+        console.error('[auth] reset resend exception:', err);
+        showToast('Could not resend. Please try again.');
+      }
     });
 
     // ---- OTP panel wiring ----
@@ -497,6 +627,12 @@
       if (otpEmailEl) otpEmailEl.textContent = pendingEmail;
       console.log('[auth] Restored pending verification for', pendingEmail);
       openModal('verify', { intent: pend.intent });
+    } else {
+      const reset = loadReset();
+      if (reset) {
+        openModal(null, { intent: reset.intent });
+        showResetStep(reset.email);
+      }
     }
 
     syncSubmitButtons();
@@ -611,6 +747,71 @@
       console.error('[auth] login error:', err);
       showFieldError('l-pass', isNetworkError(err) ? OFFLINE_MSG : 'Sign-in failed. Please try again.');
       setSubmitting('l-submit', false);
+    }
+  }
+
+  // Forgot password, step 1: ask Supabase for a recovery code. The response is
+  // the same whether or not the address has an account, so addresses cannot be
+  // enumerated from this form; the next step says "if an account exists".
+  async function doForgot(rawEmail) {
+    const sb = window.PED.supabase;
+    const email = normEmail(rawEmail);
+    if (!sb) return showFieldError('f-email', OFFLINE_MSG);
+    setSubmitting('f-submit', true);
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email);
+      if (error) {
+        const msg = (error.message || '').toLowerCase();
+        showFieldError('f-email', isNetworkError(error) ? OFFLINE_MSG
+          : /rate limit|too many/.test(msg) ? 'Too many requests — wait a minute and try again.'
+          : (error.message || 'Could not send the code.'));
+        return;
+      }
+      showResetStep(email);
+    } catch (err) {
+      console.error('[auth] forgot error:', err);
+      showFieldError('f-email', isNetworkError(err) ? OFFLINE_MSG : 'Could not send the code. Please try again.');
+    } finally {
+      setSubmitting('f-submit', false);
+    }
+  }
+
+  // Forgot password, step 2: the recovery code signs the participant in, the
+  // new password is set on that session, and sign-in finishes as usual (so a
+  // reset started from the results page still saves the result).
+  async function doReset(code, password) {
+    const sb = window.PED.supabase;
+    if (!sb) return showFieldError('reset-code', OFFLINE_MSG);
+    if (!resetEmail) return showFieldError('reset-code', 'Lost track of your email — request a new code.');
+    setSubmitting('reset-submit', true);
+    try {
+      const { data, error } = await sb.auth.verifyOtp({ email: resetEmail, token: code, type: 'recovery' });
+      if (error) {
+        const msg = (error.message || '').toLowerCase();
+        // Supabase answers "Token has expired or is invalid" for both cases.
+        showFieldError('reset-code', isNetworkError(error) ? OFFLINE_MSG
+          : /expired|invalid|otp|token/.test(msg)
+            ? 'Incorrect or expired code. If you clicked Resend, only the newest code works.'
+          : (error.message || 'Verification failed.'));
+        return;
+      }
+      const { error: updateError } = await sb.auth.updateUser({ password });
+      if (updateError) {
+        showFieldError('n-pass', updateError.message || 'Could not set the new password.');
+        return;
+      }
+      const user = data?.user;
+      const fullName = user ? await fetchFullName(user.id) : '';
+      const displayName = (fullName || '').split(' ')[0] || resetEmail.split('@')[0];
+      const profile = { mode: 'email', email: resetEmail, displayName, fullName, ts: Date.now() };
+      resetEmail = ''; saveReset();
+      showToast('Password updated — you are signed in.');
+      finishSignIn(profile, nextPage(), 400);
+    } catch (err) {
+      console.error('[auth] reset error:', err);
+      showFieldError('reset-code', isNetworkError(err) ? OFFLINE_MSG : `Could not reset the password: ${err.message || err}`);
+    } finally {
+      setSubmitting('reset-submit', false);
     }
   }
 
