@@ -220,6 +220,19 @@ an unverified address returns the participant to the code screen with a fresh co
 
 ---
 
+## Forgot password
+
+**Forgot password?** on the sign-in panel asks for the account's email and sends a 6-digit
+reset code (Supabase recovery OTP). The participant enters the code and a new password; the
+code signs them in, the password is set on that session, and sign-in finishes as usual — so a
+reset started from the results page still saves the anonymous result to the account. The
+response to the request is the same whether or not the address has an account, so addresses
+cannot be enumerated. A refresh returns to the code step for one hour.
+
+Gate: Supabase → Authentication → Emails → Templates → **Reset password** must emit
+`{{ .Token }}` (template: `supabase/templates/reset-password.html`). `FORGOT_PASSWORD_TEST_PLAN.md`
+is the test script.
+
 ## Question bank
 
 The 20 statements live in the `questions` table. The admin dashboard shows them in a

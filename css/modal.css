@@ -291,6 +291,25 @@
 }
 
 /* --------------------------------------------------------------------------
+   Forgot password — the link under the sign-in password, and the reset step,
+   which shares the OTP panel's centred code box but keeps its password field
+   as an ordinary field.
+   -------------------------------------------------------------------------- */
+.forgot-line { margin: -.125rem 0 1rem; text-align: right; }
+
+.reset-panel .field-text { text-align: left; }
+.reset-panel .field-text input {
+  min-height: 44px;
+  padding: .5rem .75rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-align: left;
+  text-indent: 0;
+}
+
+/* --------------------------------------------------------------------------
    Claim mode — saving an anonymous result to an account (results page).
    The participant is already anonymous, so that option is not offered.
    -------------------------------------------------------------------------- */
