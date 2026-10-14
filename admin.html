@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin Dashboard — Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=2.4" />
-<link rel="stylesheet" href="css/admin.css?v=2.4" />
+<link rel="stylesheet" href="css/main.css?v=2.5" />
+<link rel="stylesheet" href="css/admin.css?v=2.5" />
 </head>
 <body data-signout-redirect="admin.html">
 
@@ -65,10 +65,6 @@
         <button class="btn btn-primary" id="admin-export-csv" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
-        </button>
-        <button class="btn btn-danger-ghost" id="admin-reset-all" type="button" hidden title="Wipes all sessions, responses, and non-admin users. Debug only.">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Reset all test data
         </button>
       </div>
     </div>
@@ -211,6 +207,10 @@
     <section class="panel panel-flush" aria-labelledby="participants-title">
       <div class="table-toolbar">
         <h2 class="panel-title" id="participants-title">Participant sessions</h2>
+        <label class="toggle-archived" hidden>
+          <input id="admin-show-archived" type="checkbox" />
+          Show archived <span id="admin-archived-count"></span>
+        </label>
         <div class="search-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <label class="sr-only" for="admin-search">Search participants</label>
@@ -274,11 +274,11 @@
 <!-- ========================= SCRIPTS ========================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=2.4"></script>
-<script src="js/session.js?v=2.4"></script>
-<script src="js/questions.js?v=2.4"></script>
-<script src="js/question-bank.js?v=2.4"></script>
-<script src="js/demographic-options.js?v=2.4"></script>
-<script src="js/admin.js?v=2.4"></script>
+<script src="js/supabase.js?v=2.5"></script>
+<script src="js/session.js?v=2.5"></script>
+<script src="js/questions.js?v=2.5"></script>
+<script src="js/question-bank.js?v=2.5"></script>
+<script src="js/demographic-options.js?v=2.5"></script>
+<script src="js/admin.js?v=2.5"></script>
 </body>
 </html>
