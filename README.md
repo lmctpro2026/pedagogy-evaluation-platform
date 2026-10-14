@@ -221,6 +221,17 @@ an unverified address returns the participant to the code screen with a fresh co
 
 ---
 
+## Time on task
+
+Every stored evaluation records when its 10-minute session began (`created_at`) and when it was
+submitted (`completed_at`), so the time spent needs no extra tracking. The admin dashboard shows
+it three ways: a **Time** column per participant (total across their completed evaluations, with
+the latest attempt on hover), a **Time on task** card (average and median per completed
+evaluation), and "Took m:ss" on each session in the participant profile. The CSV export carries
+"Time Spent (m:ss)" and "Completed Evaluations". Durations are capped at the 11-minute server
+limit so rows stored before the session rule cannot skew the averages. Archived participants are
+excluded, as everywhere else.
+
 ## Archive instead of delete
 
 Administrators cannot delete a participant. The **Archive** button on a row hides the

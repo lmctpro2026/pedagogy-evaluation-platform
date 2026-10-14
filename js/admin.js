@@ -179,6 +179,24 @@
   let archiveAvailable = false; // archive-participants.sql applied
 
   // Build the per-participant row from a set of sessions, newest first.
+  // Time on task. Every stored evaluation carries its start (created_at, the
+  // moment the 10-minute session began) and its finish (completed_at), so the
+  // time spent is their difference. The server refuses submissions after
+  // 10 minutes plus a 1-minute grace, so anything longer is a pre-Sprint-4 row
+  // and is capped at that limit rather than skewing the averages.
+  const TIME_CAP_MS = 11 * 60 * 1000;
+  function durationMs(s) {
+    if (!s?.completed_at || !s?.created_at) return null;
+    const ms = new Date(s.completed_at).getTime() - new Date(s.created_at).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    return Math.min(ms, TIME_CAP_MS);
+  }
+  function formatDuration(ms) {
+    if (ms == null) return '—';
+    const total = Math.round(ms / 1000);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+
   function buildRow(base, sessions) {
     const sorted = sessions.slice().sort((a, b) => {
       const ad = new Date(a.completed_at || a.created_at).getTime();
@@ -192,11 +210,16 @@
     const status    = !latest ? 'not-started' : latest.completed_at ? 'completed' : 'in-progress';
 
     const num = v => +(+v || 0).toFixed(1);
+    const durations = sorted.map(durationMs).filter(v => v != null);
+    const time = durations.length ? durations.reduce((a, b) => a + b, 0) : null;
 
     return {
       ...base,
       sessionId:    latest?.id || null,
       status,
+      time,                                   // total ms across completed evaluations
+      timeCount:    durations.length,
+      lastTime:     durationMs(completed),
       tp:           isDone ? num(latest.score_tp)  : null,
       pd:           isDone ? num(latest.score_pd)  : null,
       ta:           isDone ? num(latest.score_ta)  : null,
@@ -213,7 +236,7 @@
 
   async function loadData(sb) {
     const tableBody = $('#admin-tbody');
-    if (tableBody) tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Loading…</td></tr>';
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="11" class="table-empty">Loading…</td></tr>';
     loadQuestionBank();
 
     try {
@@ -317,7 +340,7 @@
       updateLastUpdated();
     } catch (err) {
       console.error('[admin] loadData error:', err);
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="table-empty is-error">Error loading data: ${err.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="11" class="table-empty is-error">Error loading data: ${err.message}</td></tr>`;
     }
   }
 
@@ -374,6 +397,14 @@
 
     set('stat-avg',              avgScore != null ? `${avgScore}%` : '—');
     set('stat-avg-sub',          `across ${completed.length} completed`);
+
+    // Time on task — per completed evaluation, not per participant, so a
+    // returning participant's second attempt counts as its own evaluation.
+    const times = allSessionsCache.map(durationMs).filter(v => v != null).sort((a, b) => a - b);
+    const avgTime = times.length ? times.reduce((a, b) => a + b, 0) / times.length : null;
+    const medTime = times.length ? times[Math.floor(times.length / 2)] : null;
+    set('stat-time',             formatDuration(avgTime));
+    set('stat-time-sub',         times.length ? `median ${formatDuration(medTime)} · ${times.length} evaluation${times.length !== 1 ? 's' : ''}` : 'no completed evaluations yet');
 
     set('stat-demographics',     demographicsAvailable ? provided : '—');
     set('stat-demographics-sub', demographicsAvailable
@@ -639,7 +670,7 @@
     visible.sort((a, b) => {
       let va = a[sortCol], vb = b[sortCol];
       if (sortCol === 'date') { va = new Date(va).getTime() || 0; vb = new Date(vb).getTime() || 0; }
-      else if (['tp','pd','ta','tpp','overall'].includes(sortCol)) {
+      else if (['tp','pd','ta','tpp','overall','time'].includes(sortCol)) {
         va = (va == null) ? -Infinity : va;
         vb = (vb == null) ? -Infinity : vb;
       }
@@ -653,7 +684,7 @@
     if (!tbody) return;
 
     if (visible.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="table-empty">${allRows.length === 0 ? 'No participants yet.' : 'No results match your search.'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" class="table-empty">${allRows.length === 0 ? 'No participants yet.' : 'No results match your search.'}</td></tr>`;
       if (footer) footer.textContent = '0 participants';
       return;
     }
@@ -691,6 +722,7 @@
         <td class="td-score">${score(r.ta)}</td>
         <td class="td-score">${score(r.tpp)}</td>
         <td class="td-overall">${overallCell(r)}</td>
+        <td class="td-score td-time" title="${r.timeCount ? `${r.timeCount} completed evaluation${r.timeCount !== 1 ? 's' : ''}` + (r.timeCount > 1 ? ` · latest ${formatDuration(r.lastTime)}` : '') : 'No completed evaluation'}">${r.time != null ? formatDuration(r.time) : '<span class="cell-muted">—</span>'}</td>
         <td class="td-date">${formatDate(r.date)}</td>
         <td class="td-actions">${archiveButton(r)}</td>
       </tr>
@@ -740,6 +772,7 @@
   function exportCSV() {
     const headers = [
       '#', 'Name', 'Email', 'Anonymous', 'Status', 'TP', 'PD', 'TA', 'TPP', 'Overall',
+      'Time Spent (m:ss)', 'Completed Evaluations',
       'Age Group', 'Gender', 'Gender (specified)', 'Academic Level', 'Last Activity',
     ];
     const cell = v => v == null ? '' : v;
@@ -747,6 +780,7 @@
     const rows = activeRows().map((r, i) => [
       i + 1, r.name, r.email, r.anon ? 'Yes' : 'No', r.status,
       cell(r.tp), cell(r.pd), cell(r.ta), cell(r.tpp), cell(r.overall),
+      r.time != null ? formatDuration(r.time) : '', r.timeCount,
       demoCell(r.demo, D.AGE_GROUPS,      'age_group'),
       demoCell(r.demo, D.GENDERS,         'gender'),
       r.demo?.provided ? cell(r.demo.gender_other) : '',
@@ -826,6 +860,7 @@
             <span class="badge badge-status ${status}">${STATUS_LABELS[status]}</span>
             <span class="pm-session-date">Started ${formatDate(s.created_at)}</span>
             ${isCompleted ? `<span class="pm-session-date">· Completed ${formatDate(s.completed_at)}</span>` : ''}
+            ${isCompleted && durationMs(s) != null ? `<span class="pm-session-date pm-session-time">· Took ${formatDuration(durationMs(s))}</span>` : ''}
           </div>
           <button class="btn btn-ghost btn-sm pm-toggle-responses" type="button" data-session-id="${s.id}">View responses</button>
         </div>
