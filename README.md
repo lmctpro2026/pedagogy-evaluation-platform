@@ -120,6 +120,7 @@ Run these in the Supabase SQL Editor, in order. Each is idempotent.
 | 4 | `sprint4-attempts.sql` | Sprint 4 — store on completion, 10-minute sessions, two attempts a year |
 | 5 | `sprint5-claim.sql` | Sprint 5 — save an anonymous result to an account |
 | 6 | `question-bank.sql` | Question bank — administrators edit the wording of the 20 statements |
+| 7 | `archive-participants.sql` | Archive instead of delete — removes the administrator delete policies |
 | 6 | `demo-seed.sql` | *Optional* — eight fictional participants for demonstrations |
 
 Then, in the Supabase dashboard:
@@ -219,6 +220,20 @@ an unverified address returns the participant to the code screen with a fresh co
 `SPRINT5_TEST_PLAN.md` is the test script for both.
 
 ---
+
+## Archive instead of delete
+
+Administrators cannot delete a participant. The **Archive** button on a row hides the
+participant from the dashboard, the charts and the CSV export; **Show archived** reveals them,
+and **Restore** brings them back. Nothing is removed: the profile, sessions and responses stay
+and still fall under the three-year purge. `set_participant_archived()` is the only way to
+change the archive state (administrators only; a participant cannot change it on their own row;
+administrator accounts cannot be archived). `archive-participants.sql` also removes the
+administrator DELETE policies and the reset-test-data function that earlier versions used, so
+deletion is not an administrator action anywhere.
+
+Gate: run `archive-participants.sql` (after `admin-policies.sql`). Until then the Archive
+button is not shown. `ARCHIVE_PARTICIPANTS_TEST_PLAN.md` is the test script.
 
 ## Forgot password
 
