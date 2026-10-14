@@ -133,76 +133,37 @@
 
     // CSV export
     $('#admin-export-csv')?.addEventListener('click', exportCSV);
+    $('#admin-show-archived')?.addEventListener('change', renderTable);
 
     // Refresh
     $('#admin-refresh')?.addEventListener('click', () => loadData(window.PED.supabase));
-
-    // Reset all test data — only visible if ?debug=1 is in the URL
-    const debugMode = new URLSearchParams(window.location.search).get('debug') === '1';
-    const resetBtn  = $('#admin-reset-all');
-    if (resetBtn && debugMode) {
-      resetBtn.hidden = false;
-      resetBtn.addEventListener('click', () => resetAllTestData());
-    }
   }
 
   // -------------------------------------------------------------------------
-  // Per-row participant delete — wipes the user row (cascades to sessions and
-  // responses via FK). Auth.users is left in place; if needed, use the bigger
-  // "Reset test data" button.
+  // Archive / restore a participant. Nothing is deleted: the profile, sessions
+  // and responses stay in place; an archived participant is hidden from the
+  // dashboard, its charts and the CSV export until restored.
   // -------------------------------------------------------------------------
-  async function deleteParticipant(userId, participantName) {
+  async function setParticipantArchived(userId, archived, participantName) {
     if (!userId) return;
     const label = participantName || 'this participant';
-    if (!window.confirm(`Delete "${label}" and all of their session data?\n\nRemoves their profile row, every session they have, and every question response. Cannot be undone.`)) return;
+    const question = archived
+      ? `Archive "${label}"?\n\nThey disappear from the dashboard, charts and export. Nothing is deleted and you can restore them at any time.`
+      : `Restore "${label}" to the dashboard?`;
+    if (!window.confirm(question)) return;
 
     const sb = window.PED?.supabase;
     if (!sb) return;
     try {
-      const { error } = await sb.from('users').delete().eq('id', userId);
+      const { error } = await sb.rpc('set_participant_archived', { p_user_id: userId, p_archived: archived });
       if (error) throw error;
-      // Re-read rather than patching local state — deleting a user cascades to
-      // their sessions, responses and demographics, which every panel counts.
       await loadData(sb);
     } catch (err) {
-      console.error('[admin] delete error:', err);
-      window.alert(`Failed to delete participant: ${err.message}`);
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Reset all test data (debug button — wipes everything except admin users)
-  // -------------------------------------------------------------------------
-  async function resetAllTestData() {
-    const sb = window.PED?.supabase;
-    if (!sb) return;
-
-    if (!window.confirm(
-      'RESET ALL TEST DATA?\n\n' +
-      'This wipes every session, every response, and every non-admin user account from the database. Admin accounts are preserved.\n\n' +
-      'This cannot be undone.'
-    )) return;
-    if (!window.confirm('Are you absolutely sure? Type-check failed accounts will be permanently deleted.')) return;
-
-    const btn = document.getElementById('admin-reset-all');
-    const orig = btn?.innerHTML;
-    if (btn) { btn.disabled = true; btn.innerHTML = 'Resetting…'; }
-
-    try {
-      const { data, error } = await sb.rpc('admin_reset_test_data');
-      if (error) throw error;
-      window.alert(
-        'Reset complete.\n' +
-        `Sessions deleted: ${data?.deleted_sessions ?? '?'}\n` +
-        `Profile rows deleted: ${data?.deleted_users ?? '?'}\n` +
-        `Auth accounts deleted: ${data?.deleted_auth_users ?? '?'}`
-      );
-      await loadData(sb);
-    } catch (err) {
-      console.error('[admin] reset error:', err);
-      window.alert(`Reset failed: ${err.message}`);
-    } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      console.error('[admin] archive error:', err);
+      const m = err?.message || '';
+      window.alert(err?.code === 'PGRST202'
+        ? 'Archiving needs the archive-participants.sql database update.'
+        : `Could not ${archived ? 'archive' : 'restore'} ${label}: ${m}`);
     }
   }
 
@@ -214,7 +175,8 @@
   // all become their own "unattached" participant rather than disappearing
   // from the counts.
   // -------------------------------------------------------------------------
-  let allSessionsCache = [];   // full sessions list, used by the profile modal
+  let allSessionsCache = [];   // sessions of active participants, used by every aggregate and the profile modal
+  let archiveAvailable = false; // archive-participants.sql applied
 
   // Build the per-participant row from a set of sessions, newest first.
   function buildRow(base, sessions) {
@@ -255,10 +217,9 @@
     loadQuestionBank();
 
     try {
-      const [usersRes, sessionsRes, demoRes] = await Promise.all([
-        sb.from('users')
-          .select('id, email, full_name, is_anonymous, created_at')
-          .order('created_at', { ascending: false }),
+      const usersQuery = cols => sb.from('users').select(cols).order('created_at', { ascending: false });
+      let [usersRes, sessionsRes, demoRes] = await Promise.all([
+        usersQuery('id, email, full_name, is_anonymous, created_at, archived_at, archived_by'),
         sb.from('sessions')
           .select('id, user_id, participant_email, score_tp, score_pd, score_ta, score_tpp, completed_at, created_at')
           .order('created_at', { ascending: false }),
@@ -268,6 +229,10 @@
           .select('session_id, provided, age_group, gender, gender_other, academic_level, created_at'),
       ]);
 
+      // Archive is a later migration (archive-participants.sql) — until it is
+      // applied the columns are missing and every participant counts as active.
+      archiveAvailable = !usersRes.error;
+      if (usersRes.error?.code === '42703') usersRes = await usersQuery('id, email, full_name, is_anonymous, created_at');
       if (usersRes.error)    throw usersRes.error;
       if (sessionsRes.error) throw sessionsRes.error;
 
@@ -279,7 +244,7 @@
       );
 
       // Attach each session's demographics up front so every consumer sees it.
-      allSessionsCache = (sessionsRes.data || []).map(s => ({
+      const allSessions = (sessionsRes.data || []).map(s => ({
         ...s,
         demo: demoBySession.get(s.id) || null,
       }));
@@ -289,15 +254,18 @@
         .filter(u => !ADMIN_EMAILS.includes((u.email || '').toLowerCase()));
 
       const claimed = new Set();
+      const archivedSessionIds = new Set();
 
       const userRows = users.map(u => {
         // Match by user_id OR by participant_email (case-insensitive)
         const userEmailLower = (u.email || '').toLowerCase();
-        const sessions = allSessionsCache.filter(s =>
+        const sessions = allSessions.filter(s =>
           s.user_id === u.id ||
           (userEmailLower && s.participant_email && s.participant_email.toLowerCase() === userEmailLower)
         );
         sessions.forEach(s => claimed.add(s.id));
+        const archived = !!u.archived_at;
+        if (archived) sessions.forEach(s => archivedSessionIds.add(s.id));
 
         return buildRow({
           rowId:      u.id,
@@ -307,13 +275,19 @@
           anon:       u.is_anonymous ?? false,
           registered: u.created_at,
           orphan:     false,
+          archived,
+          archivedAt: u.archived_at || null,
+          archivedBy: u.archived_by || null,
         }, sessions);
       });
+
+      // Archived participants' sessions stay out of every aggregate.
+      allSessionsCache = allSessions.filter(s => !archivedSessionIds.has(s.id));
 
       // Sessions belonging to no visible user row (e.g. the participant's auth
       // account was removed). They are still real assessments, so they count as
       // participants — one row per unattached session.
-      const orphanRows = allSessionsCache
+      const orphanRows = allSessions
         .filter(s => !claimed.has(s.id))
         .map(s => buildRow({
           rowId:      `session:${s.id}`,
@@ -323,6 +297,7 @@
           anon:       true,
           registered: s.created_at,
           orphan:     true,
+          archived:   false,
         }, [s]));
 
       allRows = [...userRows, ...orphanRows];
@@ -354,12 +329,15 @@
   //   completed    — participants with at least one finished session
   //   accounts     — participants who registered (not anonymous sign-ins)
   // -------------------------------------------------------------------------
+  function activeRows() { return allRows.filter(r => !r.archived); }
+
   function renderStats() {
-    const participants = allRows.length;
-    const started      = allRows.filter(r => r.sessionCount > 0).length;
-    const completed    = allRows.filter(r => r.status === 'completed');
-    const inProgress   = allRows.filter(r => r.status === 'in-progress').length;
-    const accounts     = allRows.filter(r => !r.anon).length;
+    const rows         = activeRows();
+    const participants = rows.length;
+    const started      = rows.filter(r => r.sessionCount > 0).length;
+    const completed    = rows.filter(r => r.status === 'completed');
+    const inProgress   = rows.filter(r => r.status === 'in-progress').length;
+    const accounts     = rows.filter(r => !r.anon).length;
     const anonymous    = participants - accounts;
 
     const avgScore = completed.length
@@ -642,10 +620,18 @@
   // Sessions table
   // -------------------------------------------------------------------------
   function renderTable() {
-    const query   = ($('#admin-search')?.value || '').toLowerCase();
+    const query        = ($('#admin-search')?.value || '').toLowerCase();
+    const showArchived = !!$('#admin-show-archived')?.checked;
+    const archivedCount = allRows.filter(r => r.archived).length;
+    const countEl = $('#admin-archived-count');
+    if (countEl) countEl.textContent = archivedCount ? `(${archivedCount})` : '';
+    const toggleWrap = $('#admin-show-archived')?.closest('label');
+    if (toggleWrap) toggleWrap.hidden = !archiveAvailable;
+
     const visible = allRows.filter(r =>
-      r.name.toLowerCase().includes(query) ||
-      (r.email || '').toLowerCase().includes(query)
+      (showArchived || !r.archived) &&
+      (r.name.toLowerCase().includes(query) ||
+       (r.email || '').toLowerCase().includes(query))
     );
 
     // Sort. For numeric score columns, treat null as -Infinity so completed rows
@@ -678,12 +664,24 @@
       : r.status === 'in-progress' ? '<span class="cell-muted">…</span>'
       : '<span class="cell-muted">—</span>';
 
+    const archiveButton = r => {
+      if (r.orphan || !archiveAvailable) return '';
+      const name = (r.name || '').replace(/"/g, '&quot;');
+      return r.archived
+        ? `<button class="btn-row btn-row-restore" type="button" data-action="restore-participant" data-user-id="${r.userId}" data-participant-name="${name}" title="Restore this participant to the dashboard">Restore</button>`
+        : `<button class="btn-row btn-row-archive" type="button" data-action="archive-participant" data-user-id="${r.userId}" data-participant-name="${name}" title="Hide this participant from the dashboard — nothing is deleted">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            Archive
+          </button>`;
+    };
+
     tbody.innerHTML = visible.map((r, i) => `
-      <tr data-row-id="${r.rowId}">
+      <tr data-row-id="${r.rowId}" class="${r.archived ? 'is-archived' : ''}">
         <td class="td-score td-index">${String(i + 1).padStart(2, '0')}</td>
         <td class="td-name">
           ${r.name}
           ${r.anon ? '<span class="badge badge-anon">Anonymous</span>' : ''}
+          ${r.archived ? `<span class="badge badge-archived" title="Archived ${formatDate(r.archivedAt)}${r.archivedBy ? ' by ' + r.archivedBy : ''}">Archived</span>` : ''}
           <span class="badge badge-status ${r.status}">${STATUS_LABELS[r.status]}</span>
           ${r.demo?.provided ? '<span class="badge badge-demo" title="Provided demographic details">Demographics</span>' : ''}
         </td>
@@ -694,25 +692,19 @@
         <td class="td-score">${score(r.tpp)}</td>
         <td class="td-overall">${overallCell(r)}</td>
         <td class="td-date">${formatDate(r.date)}</td>
-        <td class="td-actions">
-          ${r.orphan ? '' : `
-          <button class="btn-row-delete" type="button" data-action="delete-participant" data-user-id="${r.userId}" data-participant-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Delete this participant and all their data">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            Delete
-          </button>`}
-        </td>
+        <td class="td-actions">${archiveButton(r)}</td>
       </tr>
     `).join('');
 
-    // Delegated click handler (attached once). Handles both delete and
+    // Delegated click handler (attached once). Handles archive/restore and
     // row-clicks that open the profile modal.
     if (!tbody._clickWired) {
       tbody.addEventListener('click', e => {
-        const delBtn = e.target.closest('[data-action="delete-participant"]');
-        if (delBtn) {
+        const btn = e.target.closest('[data-action="archive-participant"], [data-action="restore-participant"]');
+        if (btn) {
           e.preventDefault();
           e.stopPropagation();
-          deleteParticipant(delBtn.dataset.userId, delBtn.dataset.participantName);
+          setParticipantArchived(btn.dataset.userId, btn.dataset.action === 'archive-participant', btn.dataset.participantName);
           return;
         }
         const row = e.target.closest('tr[data-row-id]');
@@ -721,7 +713,11 @@
       tbody._clickWired = true;
     }
 
-    if (footer) footer.textContent = `${visible.length} of ${allRows.length} participant${allRows.length !== 1 ? 's' : ''}`;
+    if (footer) {
+      const base = showArchived ? allRows.length : allRows.length - archivedCount;
+      footer.textContent = `${visible.length} of ${base} participant${base !== 1 ? 's' : ''}` +
+        (archivedCount ? ` · ${archivedCount} archived${showArchived ? ' (shown)' : ''}` : '');
+    }
   }
 
   // Column sort wiring
@@ -748,7 +744,7 @@
     ];
     const cell = v => v == null ? '' : v;
     const D    = window.PED.DEMOGRAPHICS;
-    const rows = allRows.map((r, i) => [
+    const rows = activeRows().map((r, i) => [
       i + 1, r.name, r.email, r.anon ? 'Yes' : 'No', r.status,
       cell(r.tp), cell(r.pd), cell(r.ta), cell(r.tpp), cell(r.overall),
       demoCell(r.demo, D.AGE_GROUPS,      'age_group'),
