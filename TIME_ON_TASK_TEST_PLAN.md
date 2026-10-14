@@ -17,7 +17,7 @@ Pass criteria are in bold.
 |---|------|----------|
 | A1 | Sign in to `admin.html` | Participant table has a **Time** column (m:ss) before Last activity; Engagement has a fifth card **Time on task** with an average and "median m:ss · n evaluations". |
 | A2 | Hover a Time cell for a participant with two completed evaluations | Tooltip reads **"2 completed evaluations · latest m:ss"**; the cell shows the **total**. |
-| A3 | Click **Time** in the header | Sorts by time; click again to reverse; participants with no completed evaluation sort last. |
+| A3 | Click **Time** in the header | Sorts ascending (participants with no completed evaluation first, then shortest to longest); click again for descending, longest first. |
 | A4 | Open a participant → Sessions | Each completed session line reads "Started … · Completed … · **Took m:ss**"; an unfinished session has no Took. |
 | A5 | Export CSV | Columns **"Time Spent (m:ss)"** and **"Completed Evaluations"** present and filled. |
 
