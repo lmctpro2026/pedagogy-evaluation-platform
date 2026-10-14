@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin Dashboard — Pedagogy Evaluation Platform</title>
-<link rel="stylesheet" href="css/main.css?v=2.5" />
-<link rel="stylesheet" href="css/admin.css?v=2.5" />
+<link rel="stylesheet" href="css/main.css?v=2.6" />
+<link rel="stylesheet" href="css/admin.css?v=2.6" />
 </head>
 <body data-signout-redirect="admin.html">
 
@@ -99,7 +99,7 @@
     <!-- KPIs — engagement -->
     <section class="kpi-group" aria-labelledby="kpi-engagement">
       <h2 class="kpi-group-title" id="kpi-engagement">Engagement</h2>
-      <div class="stats-grid">
+      <div class="stats-grid stats-grid-5">
         <div class="stat-card">
           <div class="stat-label">Completion rate</div>
           <div class="stat-value" id="stat-rate">—</div>
@@ -114,6 +114,11 @@
           <div class="stat-label">Average score</div>
           <div class="stat-value" id="stat-avg">—</div>
           <div class="stat-sub" id="stat-avg-sub">across completed assessments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Time on task</div>
+          <div class="stat-value" id="stat-time">—</div>
+          <div class="stat-sub" id="stat-time-sub">average per completed evaluation</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Demographics</div>
@@ -230,12 +235,13 @@
               <th scope="col" data-sort="ta" class="num" title="Technology Adoption">TA</th>
               <th scope="col" data-sort="tpp" class="num" title="Techno-Pedagogical Practice">TPP</th>
               <th scope="col" data-sort="overall" class="num">Overall</th>
+              <th scope="col" data-sort="time" class="num" title="Time spent on completed evaluations, from the start of the 10-minute session to submission">Time</th>
               <th scope="col" data-sort="date" class="sort-desc">Last activity</th>
               <th scope="col" class="num"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody id="admin-tbody">
-            <tr><td colspan="10" class="table-empty">Loading sessions…</td></tr>
+            <tr><td colspan="11" class="table-empty">Loading sessions…</td></tr>
           </tbody>
         </table>
       </div>
@@ -274,11 +280,11 @@
 <!-- ========================= SCRIPTS ========================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="js/supabase.js?v=2.5"></script>
-<script src="js/session.js?v=2.5"></script>
-<script src="js/questions.js?v=2.5"></script>
-<script src="js/question-bank.js?v=2.5"></script>
-<script src="js/demographic-options.js?v=2.5"></script>
-<script src="js/admin.js?v=2.5"></script>
+<script src="js/supabase.js?v=2.6"></script>
+<script src="js/session.js?v=2.6"></script>
+<script src="js/questions.js?v=2.6"></script>
+<script src="js/question-bank.js?v=2.6"></script>
+<script src="js/demographic-options.js?v=2.6"></script>
+<script src="js/admin.js?v=2.6"></script>
 </body>
 </html>
